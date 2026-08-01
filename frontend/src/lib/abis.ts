@@ -1,0 +1,211 @@
+export const subscriptionsAbi = [
+  {
+    type: "function",
+    name: "createPlan",
+    inputs: [
+      { name: "pricePerCycle", type: "uint128" },
+      { name: "cycleDuration", type: "uint40" },
+    ],
+    outputs: [{ name: "planId", type: "uint256" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "deactivatePlan",
+    inputs: [{ name: "planId", type: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "subscribe",
+    inputs: [{ name: "planId", type: "uint256" }],
+    outputs: [
+      { name: "subscriptionId", type: "uint256" },
+      { name: "tag", type: "uint256" },
+    ],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "finalize",
+    inputs: [{ name: "subscriptionId", type: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "deactivateSubscription",
+    inputs: [{ name: "subscriptionId", type: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "pendingFxrp",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "nextPlanId",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "nextSubscriptionId",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "fxrp",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "lockup",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "plans",
+    inputs: [{ name: "planId", type: "uint256" }],
+    outputs: [
+      { name: "merchant", type: "address" },
+      { name: "pricePerCycle", type: "uint128" },
+      { name: "cycleDuration", type: "uint40" },
+      { name: "active", type: "bool" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "subscriptions",
+    inputs: [{ name: "subscriptionId", type: "uint256" }],
+    outputs: [
+      { name: "planId", type: "uint256" },
+      { name: "customer", type: "address" },
+      { name: "tag", type: "uint256" },
+      { name: "streamId", type: "uint256" },
+      { name: "cycle", type: "uint256" },
+      { name: "active", type: "bool" },
+    ],
+    stateMutability: "view",
+  },
+] as const;
+
+export const lockupAbi = [
+  {
+    type: "function",
+    name: "cancel",
+    inputs: [{ name: "streamId", type: "uint256" }],
+    outputs: [{ name: "refundedAmount", type: "uint128" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "withdrawMax",
+    inputs: [
+      { name: "streamId", type: "uint256" },
+      { name: "to", type: "address" },
+    ],
+    outputs: [{ name: "withdrawnAmount", type: "uint128" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "statusOf",
+    inputs: [{ name: "streamId", type: "uint256" }],
+    outputs: [{ name: "status", type: "uint8" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "streamedAmountOf",
+    inputs: [{ name: "streamId", type: "uint256" }],
+    outputs: [{ name: "streamedAmount", type: "uint128" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "withdrawableAmountOf",
+    inputs: [{ name: "streamId", type: "uint256" }],
+    outputs: [{ name: "withdrawableAmount", type: "uint128" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "refundableAmountOf",
+    inputs: [{ name: "streamId", type: "uint256" }],
+    outputs: [{ name: "refundableAmount", type: "uint128" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "recipientOf",
+    inputs: [{ name: "streamId", type: "uint256" }],
+    outputs: [{ name: "recipient", type: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getStream",
+    inputs: [{ name: "streamId", type: "uint256" }],
+    outputs: [
+      {
+        name: "stream",
+        type: "tuple",
+        components: [
+          { name: "sender", type: "address" },
+          { name: "startTime", type: "uint40" },
+          { name: "endTime", type: "uint40" },
+          { name: "isCancelable", type: "bool" },
+          { name: "wasCanceled", type: "bool" },
+          { name: "token", type: "address" },
+          { name: "isDepleted", type: "bool" },
+          { name: "isTransferable", type: "bool" },
+          { name: "lockupModel", type: "uint8" },
+          {
+            name: "amounts",
+            type: "tuple",
+            components: [
+              { name: "deposited", type: "uint128" },
+              { name: "withdrawn", type: "uint128" },
+              { name: "refunded", type: "uint128" },
+            ],
+          },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+] as const;
+
+export const fxrpAbi = [
+  {
+    type: "function",
+    name: "balanceOf",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "transfer",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable",
+  },
+] as const;
