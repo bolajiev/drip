@@ -73,6 +73,11 @@ stream 1 STREAMING, merchant withdrew vested FXRP → customer cancel →
 unstreamed remainder refunded exactly (10−1−5+3.87 = 7.83 FXRP ✓) →
 deactivated.
 
+**E2E verified on-chain (cycle 2, fresh demo state):** subscription 2, tag
+**258**, stream 2 STREAMING (customer 0x928047e135bB8F1E1EC805d571e7732F9b675dBf
+→ merchant), left live for the demo. Customer wallet key in
+`/tmp/opencode/faucet-wallet.txt` (session-local, not in repo).
+
 **Stale deployments (superseded, don't use):** lockup
 `0xDe97183b5CCb436440c2250E51579f12E4A6Cb1b` / wrapper
 `0x81578ED3ea764EaEb1B345a5A024634C7900B28B` (pre-string-interface),
@@ -102,6 +107,9 @@ customer `0x464C34704d76944C29672346d4532e22c43220e2`, faucet-spare
 - Deployer runs out of gas fast at ~1.6k gwei; keep ≥5 C2FLR buffer.
 
 ## Frontend (`frontend/`, Aug 1 2026)
+
+GitHub: https://github.com/bolajiev/drip (public; libs vendored, no
+submodules — clone + `forge build` works out of the box).
 
 Vite + React 19 + TS + Tailwind v4 + wagmi/viem + react-query. Design:
 "utility meter editorial" — paper #f3f1ea, ink #17150e, acid #d7ff3f, Space
