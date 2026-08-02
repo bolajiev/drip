@@ -110,3 +110,22 @@ export function useFxrpBalance(address: string | undefined) {
     refetchInterval: 5000,
   });
 }
+
+/** Total withdrawable across a set of streams (for the merchant dashboard). */
+export function useTotalWithdrawable(streamIds: bigint[]) {
+  const config = useConfig();
+  const base = { chainId: coston2.id, address: DRIP_LOCKUP, abi: lockupAbi } as const;
+  const qs = useQueries({
+    queries: streamIds.map((streamId) => ({
+      queryKey: ["withdrawable", streamId.toString()],
+      enabled: streamId > 0n,
+      queryFn: () =>
+        readContract(config, { ...base, functionName: "withdrawableAmountOf", args: [streamId] }) as Promise<
+          bigint
+        >,
+      refetchInterval: 5000,
+    })),
+  });
+  const total = qs.reduce((acc, q) => acc + (q.data ?? 0n), 0n);
+  return { total, loading: qs.some((q) => q.isPending) };
+}

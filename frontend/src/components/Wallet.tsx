@@ -4,22 +4,26 @@ import { useAccount, useBalance, useConnect, useDisconnect } from "wagmi";
 import { FAUCET_URL, FXRP_DECIMALS } from "../lib/config";
 import { shortAddr } from "../lib/format";
 
+export function ConnectButton({ className = "" }: { className?: string }) {
+  const { connect, connectors, isPending } = useConnect();
+  return (
+    <button
+      onClick={() => connect({ connector: connectors[0] })}
+      disabled={isPending}
+      className={`border border-ink bg-ink px-4 py-2 font-mono text-xs font-semibold tracking-tight text-paper transition-colors hover:bg-acid hover:text-ink disabled:opacity-50 ${className}`}
+    >
+      {isPending ? "CONNECTING…" : "CONNECT WALLET"}
+    </button>
+  );
+}
+
 export function Wallet() {
   const { address, isConnected } = useAccount();
-  const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const { data: c2flr } = useBalance({ address });
 
   if (!isConnected || !address) {
-    return (
-      <button
-        onClick={() => connect({ connector: connectors[0] })}
-        disabled={isPending}
-        className="border border-ink bg-ink px-4 py-2 font-mono text-xs font-semibold tracking-tight text-paper transition-colors hover:bg-acid hover:text-ink disabled:opacity-50"
-      >
-        {isPending ? "CONNECTING…" : "CONNECT WALLET"}
-      </button>
-    );
+    return <ConnectButton />;
   }
 
   return (

@@ -1,4 +1,4 @@
-import { FXRP_DECIMALS } from "./config";
+import { FXRP_DECIMALS, FXRP_VAULT_XRPL } from "./config";
 
 export function fmtFxrp(uba: bigint | undefined, digits = 2): string {
   if (uba === undefined) return "–";
@@ -28,4 +28,14 @@ export function fmtC2flr(wei: bigint | undefined): string {
   if (wei === undefined) return "–";
   const divisor = 10n ** 18n;
   return `${Number(wei) / Number(divisor)}`.slice(0, 8);
+}
+
+/** Xaman payment-request deep link: recipient + amount + destination tag (tag-based FXRP direct minting, no memo needed). */
+export function xamanPayLink(tag: bigint | number, amountXrp: number): string {
+  return `https://xaman.app/detect/request:${FXRP_VAULT_XRPL}?amount=${amountXrp}&network=XRPL&dt=${tag}`;
+}
+
+/** Shareable subscribe link for a plan. */
+export function subscribeLink(planId: bigint | number): string {
+  return `${window.location.origin}/#/s/${planId}`;
 }

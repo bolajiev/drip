@@ -118,11 +118,24 @@ recomputes vested amount client-side every 100ms, on-chain reads poll at 5s).
 
 - `npm run dev` (port 5173), `npm run build` (tsc + vite, passes).
 - Single chain: Coston2 (id 114); connector: injected (MetaMask/Rabby).
-- Views: MERCHANT (create plan, incoming streams w/ withdraw, plan list +
-  deactivate) / CUSTOMER (plans, subscribe, fund cycle via simulated FXRP
-  transfer — on mainnet this is the XRPL deposit with destination tag; the
-  real direct-mint is deferred, see below — finalize, live Meter, cancel +
-  refund, deactivate).
+- **Layout (HashRouter, Aug 2 2026)**: `/` marketing landing (hero, how-it-
+  works, merchant/customer blocks, trust, footer — no wallet connect in
+  hero) · `/docs` · `/app` merchant+customer dashboard · `/s/:planId`
+  customer subscribe flow: connect EVM wallet → subscribe (gets personal
+  XRPL destination tag via MintingTagManager) → pay (Xaman payment-request
+  QR: `https://xaman.app/detect/request:<vault>?amount=X&network=XRPL&dt=TAG`
+  + simulated-FXRP fallback for testnet) → mint watcher (FXRP Transfer to
+  DripSubscriptions) → finalize → live Meter + cancel.
+- Merchant dashboard: per-plan shareable subscribe link + QR (QRCodeSVG),
+  subscribers table w/ live accrued/withdrawable per stream, WITHDRAW per
+  subscriber, total withdrawable header (withdrawableAmountOf sum).
+- XRPL Core Vault address `rDhpmiPq4BVBDWMVdSrmkgt8thKyRzGV1p` from
+  `AssetManagerFXRP.directMintingPaymentAddress()` (registry entry
+  `CoreVaultManager` resolves to zero — use the direct call).
+- Deploy: Vercel (token in env of this session), `vercel.json` = framework
+  vite, build `npm run build`, output `dist`. Live:
+  **https://frontend-beta-black-19.vercel.app** (aliased; prod deploys via
+  `npx vercel deploy --prod --token <vcp_...>`).
 - Contract addresses live in `src/lib/config.ts`; ABIs (hand-written, match
   live contract — verified via eth_call) in `src/lib/abis.ts`.
 - Verification: all read calls (`nextPlanId`, `plans(1)`, `nextSubscriptionId`,
