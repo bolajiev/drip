@@ -5,8 +5,6 @@ import { Link } from "react-router-dom";
 import { Wallet, NetworkNote } from "../components/Wallet";
 import { MerchantView } from "../components/MerchantView";
 import { CustomerView } from "../components/CustomerView";
-import { DRIP_LOCKUP, DRIP_SUBSCRIPTIONS, FXRP, MINTING_TAG_MANAGER } from "../lib/config";
-import { shortAddr } from "../lib/format";
 
 type View = "merchant" | "customer";
 
@@ -48,7 +46,7 @@ export function AppShell() {
                 view === "customer" ? "bg-ink text-paper" : "text-ink hover:bg-paper-deep"
               }`}
             >
-              CUSTOMER
+              MY SUBSCRIPTIONS
             </button>
           </nav>
           <Wallet />
@@ -58,10 +56,22 @@ export function AppShell() {
       <main className="flex-1 py-8">
         {!isConnected ? (
           <div className="border border-dashed border-rule px-6 py-16 text-center">
-            <p className="font-mono text-sm text-ink-soft">CONNECT A WALLET ON COSTON2 TO BEGIN</p>
-            <p className="mt-2 font-mono text-[11px] text-ink-soft">
-              MetaMask / Rabby · chain id 114 · RPC https://coston2-api.flare.network/ext/C/rpc
-            </p>
+            {view === "merchant" ? (
+              <>
+                <p className="font-mono text-sm text-ink-soft">CONNECT A WALLET TO CREATE AND MANAGE YOUR PLANS</p>
+                <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-soft">
+                  This is where subscriber payments land, and how you&apos;ll withdraw them. One tap —
+                  your wallet asks you to add the Coston2 testnet.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-mono text-sm text-ink-soft">CONNECT A WALLET TO VIEW YOUR SUBSCRIPTIONS</p>
+                <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-soft">
+                  This wallet is how you cancel and get refunds — only you control it.
+                </p>
+              </>
+            )}
             <div className="mt-5 flex justify-center">
               <NetworkNote />
             </div>
@@ -75,30 +85,22 @@ export function AppShell() {
 
       <footer className="border-t border-rule py-6 font-mono text-[10px] leading-relaxed text-ink-soft">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="grid gap-1 sm:grid-cols-2">
-            <div>
-              SUBSCRIPTIONS <span className="text-ink">{shortAddr(DRIP_SUBSCRIPTIONS)}</span>
-            </div>
-            <div>
-              LOCKUP <span className="text-ink">{shortAddr(DRIP_LOCKUP)}</span>
-            </div>
-            <div>
-              FXRP <span className="text-ink">{shortAddr(FXRP)}</span>
-            </div>
-            <div>
-              TAG MANAGER <span className="text-ink">{shortAddr(MINTING_TAG_MANAGER)}</span>
-            </div>
+          <Link to="/docs" className="underline decoration-acid-deep underline-offset-2 hover:text-ink">
+            CONTRACTS & DEPLOYMENT →
+          </Link>
+          <div className="flex items-center gap-4">
+            <a
+              href={GITHUB}
+              target="_blank"
+              rel="noreferrer"
+              className="underline decoration-acid-deep underline-offset-2 hover:text-ink"
+            >
+              GITHUB
+            </a>
+            <span>COSTON2 TESTNET</span>
           </div>
-          <a
-            href={GITHUB}
-            target="_blank"
-            rel="noreferrer"
-            className="underline decoration-acid-deep underline-offset-2 hover:text-ink"
-          >
-            GITHUB
-          </a>
         </div>
-        <p className="mt-3 text-[10px]">COSTON2 TESTNET — TESTNET TOKENS ONLY. HACKATHON DEMO. NOT FINANCIAL ADVICE.</p>
+        <p className="mt-3 text-[10px]">TESTNET TOKENS ONLY. HACKATHON DEMO. NOT FINANCIAL ADVICE.</p>
       </footer>
     </div>
   );

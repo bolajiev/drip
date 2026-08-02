@@ -39,3 +39,8 @@ export function xamanPayLink(tag: bigint | number, amountXrp: number): string {
 export function subscribeLink(planId: bigint | number): string {
   return `${window.location.origin}/#/s/${planId}`;
 }
+
+/** Coston2 explorer page for a contract address. */
+export function explorerUrl(address: string): string {
+  return `https://coston2-explorer.flare.network/address/${address}`;
+}

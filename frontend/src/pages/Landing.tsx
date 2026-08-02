@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAccount } from "wagmi";
 
 import { ConnectButton } from "../components/Wallet";
-import { DRIP_LOCKUP, DRIP_SUBSCRIPTIONS, FXRP, MINTING_TAG_MANAGER, coston2 } from "../lib/config";
+import { coston2 } from "../lib/config";
 import { shortAddr } from "../lib/format";
 
 const GITHUB = "https://github.com/bolajiev/drip";
@@ -216,20 +216,9 @@ export function Landing() {
 
       <footer className="py-8 font-mono text-[10px] leading-relaxed text-ink-soft">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="grid gap-1 sm:grid-cols-2">
-            <div>
-              SUBSCRIPTIONS <span className="text-ink">{shortAddr(DRIP_SUBSCRIPTIONS)}</span>
-            </div>
-            <div>
-              LOCKUP <span className="text-ink">{shortAddr(DRIP_LOCKUP)}</span>
-            </div>
-            <div>
-              FXRP <span className="text-ink">{shortAddr(FXRP)}</span>
-            </div>
-            <div>
-              TAG MANAGER <span className="text-ink">{shortAddr(MINTING_TAG_MANAGER)}</span>
-            </div>
-          </div>
+          <Link to="/docs" className="underline decoration-acid-deep underline-offset-2 hover:text-ink">
+            CONTRACTS & DEPLOYMENT →
+          </Link>
           <div className="flex items-center gap-4">
             <a href={GITHUB} target="_blank" rel="noreferrer" className="underline decoration-acid-deep underline-offset-2 hover:text-ink">
               GITHUB
