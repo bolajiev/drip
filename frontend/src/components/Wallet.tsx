@@ -3,6 +3,7 @@ import { useAccount, useBalance } from "wagmi";
 import { ConnectButton as RkConnectButton, useConnectModal } from "@rainbow-me/rainbowkit";
 
 import { FAUCET_URL, FXRP_DECIMALS } from "../lib/config";
+import { metamaskDappLink } from "../lib/format";
 
 /** Our styled connect button — opens the RainbowKit wallet modal (injected on desktop, wallet-app deep links on mobile). */
 export function ConnectButton({ className = "" }: { className?: string }) {
@@ -59,6 +60,29 @@ export function NetworkNote() {
           faucet.flare.network
         </a>
       </span>
+    </div>
+  );
+}
+
+/** Fallback for mobile: opens the dApp inside MetaMask's in-app browser. */
+export function OpenInMetaMask() {
+  return (
+    <div className="mt-4 border-t border-rule pt-4">
+      <p className="font-mono text-[10px] text-ink-soft">
+        ON A PHONE WITH METAMASK INSTALLED?
+      </p>
+      <a
+        href={metamaskDappLink()}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-2 inline-block border border-ink px-4 py-2 font-mono text-xs font-semibold tracking-tight text-ink transition-colors hover:bg-ink hover:text-paper"
+      >
+        OPEN IN METAMASK →
+      </a>
+      <p className="mt-2 font-mono text-[10px] leading-relaxed text-ink-soft">
+        Opens Drip inside the MetaMask app&apos;s own browser, where connecting works like on
+        desktop. No MetaMask? Use the CONNECT button above — wallet apps appear as options.
+      </p>
     </div>
   );
 }

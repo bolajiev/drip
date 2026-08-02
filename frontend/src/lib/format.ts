@@ -44,3 +44,8 @@ export function subscribeLink(planId: bigint | number): string {
 export function explorerUrl(address: string): string {
   return `https://coston2-explorer.flare.network/address/${address}`;
 }
+
+/** Opens this dApp inside the MetaMask mobile app's in-app browser. */
+export function metamaskDappLink(): string {
+  return `https://metamask.app.link/dapp/${window.location.host}`;
+}

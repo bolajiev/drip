@@ -17,7 +17,7 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
 
 export function Docs() {
   return (
-    <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-5 sm:px-8">
+    <div className="mx-auto flex max-w-4xl flex-col px-5 sm:px-8">
       <header className="flex items-center justify-between border-b border-rule py-4">
         <Link to="/" className="flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center bg-ink">
@@ -36,7 +36,7 @@ export function Docs() {
         </nav>
       </header>
 
-      <main className="flex-1 space-y-6 py-10">
+      <main className="space-y-6 py-10">
         <h1 className="font-sans text-4xl font-bold tracking-tight">DOCS</h1>
         <p className="max-w-2xl font-mono text-xs leading-relaxed text-ink-soft">
           DRIP is a trustless recurring-subscription product on Flare. A customer pays in XRP; the

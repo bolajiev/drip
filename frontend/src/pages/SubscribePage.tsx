@@ -8,7 +8,7 @@ import { usePlans, useSubscriptions, useStream, useFxrpBalance } from "../lib/ho
 import { subscriptionsAbi, fxrpAbi, lockupAbi } from "../lib/abis";
 import { DRIP_SUBSCRIPTIONS, DRIP_LOCKUP, FXRP, STATUS_LABEL } from "../lib/config";
 import { fmtFxrp, fmtSeconds, fmtClock, shortAddr, xamanPayLink, subscribeLink } from "../lib/format";
-import { ConnectButton } from "../components/Wallet";
+import { ConnectButton, OpenInMetaMask } from "../components/Wallet";
 import { TxButton } from "../components/TxButton";
 import { Meter } from "../components/Meter";
 
@@ -251,7 +251,7 @@ export function SubscribePage() {
   else step = mintReady ? "MINT" : "PAY";
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-5 sm:px-8">
+    <div className="mx-auto flex max-w-4xl flex-col px-5 sm:px-8">
       <header className="flex items-center justify-between border-b border-rule py-4">
         <Link to="/" className="flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center bg-ink">
@@ -265,7 +265,7 @@ export function SubscribePage() {
         <ConnectButton />
       </header>
 
-      <main className="flex-1 space-y-6 py-10">
+      <main className="space-y-6 py-10">
         {plan === undefined && loading && (
           <p className="font-mono text-sm text-ink-soft">LOADING PLAN…</p>
         )}
@@ -304,6 +304,9 @@ export function SubscribePage() {
                   CONNECT AN EVM WALLET (COSTON2) — IT BECOMES YOUR CANCEL-RIGHTS HOLDER AND YOUR
                   DESTINATION TAG IS GENERATED FROM IT
                 </p>
+                <div className="mx-auto mt-5 max-w-sm text-left">
+                  <OpenInMetaMask />
+                </div>
               </section>
             )}
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAccount } from "wagmi";
 import { Link } from "react-router-dom";
 
-import { Wallet, NetworkNote } from "../components/Wallet";
+import { Wallet, NetworkNote, OpenInMetaMask } from "../components/Wallet";
 import { MerchantView } from "../components/MerchantView";
 import { CustomerView } from "../components/CustomerView";
 
@@ -91,11 +91,12 @@ function ConnectGate({ view }: { view: View }) {
         <div className="mt-6 flex justify-center">
           <NetworkNote />
         </div>
+        <OpenInMetaMask />
       </div>
       <div className="mx-auto mt-6 max-w-lg border border-rule bg-paper-deep/40 p-4">
         <p className="font-mono text-[11px] leading-relaxed text-ink-soft">
-          Streaming logic forked from Sablier&apos;s audited contracts. Non-custodial — funds sit in
-          the contract, not with Drip. Cancel anytime, get back what hasn&apos;t streamed yet.
+          Non-custodial — funds sit in the contract, not with Drip. Cancel anytime, get back what
+          hasn&apos;t streamed yet.
         </p>
       </div>
     </div>
@@ -107,11 +108,7 @@ export function AppShell() {
   const { address, isConnected } = useAccount();
 
   return (
-    <div
-      className={`mx-auto flex max-w-6xl flex-col px-5 sm:px-8 ${
-        isConnected ? "min-h-screen" : ""
-      }`}
-    >
+    <div className="mx-auto flex max-w-6xl flex-col px-5 sm:px-8">
       <header className="flex items-center justify-between border-b border-rule py-4">
         <Link to="/" className="flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center bg-ink">
@@ -149,7 +146,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className={isConnected ? "flex-1 py-8" : "py-8"}>
+      <main className="py-8">
         {!isConnected ? (
           <ConnectGate view={view} />
         ) : view === "merchant" ? (

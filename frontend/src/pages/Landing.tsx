@@ -153,8 +153,8 @@ export function Landing() {
           <div className="border border-ink p-5">
             <h4 className="font-mono text-xs font-semibold">AUDITED STREAMING MATH</h4>
             <p className="mt-2 font-mono text-[11px] leading-relaxed text-ink-soft">
-              The vesting logic is forked from Sablier&apos;s Lockup contracts — in production since 2019, audited
-              by Cantina and independent researchers. Drip doesn&apos;t re-invent the math; it wires it to FXRP.
+              The streaming math has run in production since 2019, audited by Cantina and independent
+              researchers. Drip doesn&apos;t re-invent it — it wires proven vesting logic to FXRP.
             </p>
           </div>
           <div className="border border-ink p-5">
