@@ -128,6 +128,7 @@ function PlanCard({
   active,
   merchant,
   me,
+  streamIds,
 }: {
   id: number;
   price: bigint;
@@ -135,10 +136,12 @@ function PlanCard({
   active: boolean;
   merchant: string;
   me: `0x${string}`;
+  streamIds: bigint[];
 }) {
   const link = subscribeLink(id);
   const isMine = merchant.toLowerCase() === me.toLowerCase();
   const [copied, setCopied] = useState(false);
+  const { total: planWithdrawable } = useTotalWithdrawable(streamIds);
 
   return (
     <div className="border border-ink">
@@ -157,6 +160,10 @@ function PlanCard({
         <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] text-ink-soft">YOUR SUBSCRIBE LINK</p>
           <p className="truncate font-mono text-xs text-ink">{link}</p>
+          <p className="mt-1.5 font-mono text-[11px] tabular-nums text-ink-soft">
+            {streamIds.length} SUBSCRIBER{streamIds.length === 1 ? "" : "S"} · WITHDRAWABLE{" "}
+            <b className="text-ink">{fmtFxrp(planWithdrawable)}</b> FXRP
+          </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <button
               onClick={() => {
@@ -289,8 +296,13 @@ export function MerchantView({ me }: { me: `0x${string}` }) {
               </span>
             </header>
             <div className="space-y-4 p-4">
-              {myPlans.map((p) =>
-                p.data ? (
+              {myPlans.map((p) => {
+                if (!p.data) return null;
+                const streamIds = mySubs
+                  .filter((s) => s.data && s.data[0] === BigInt(p.id))
+                  .map((s) => s.data![3])
+                  .filter((id) => id > 0n);
+                return (
                   <PlanCard
                     key={p.id}
                     id={p.id}
@@ -299,9 +311,10 @@ export function MerchantView({ me }: { me: `0x${string}` }) {
                     active={p.data[3]}
                     merchant={p.data[0]}
                     me={me}
+                    streamIds={streamIds}
                   />
-                ) : null
-              )}
+                );
+              })}
             </div>
           </section>
         </>

@@ -10,6 +10,86 @@ type View = "merchant" | "customer";
 
 const GITHUB = "https://github.com/bolajiev/drip";
 
+function Bar({ w }: { w: string }) {
+  return <span className={`block h-2 bg-rule ${w}`} />;
+}
+
+function MerchantSkeleton() {
+  return (
+    <div className="space-y-8" aria-hidden>
+      <div className="flex items-center justify-between border border-rule bg-paper px-4 py-2">
+        <Bar w="w-44" />
+        <Bar w="w-24" />
+      </div>
+      <div className="flex flex-wrap items-center gap-4 border border-rule bg-paper p-4">
+        <span className="block h-24 w-24 border border-rule bg-paper-deep" />
+        <div className="space-y-3">
+          <Bar w="w-56" />
+          <Bar w="w-80" />
+          <Bar w="w-36" />
+        </div>
+      </div>
+      <div className="space-y-3 border border-rule bg-paper p-4">
+        <Bar w="w-64" />
+        <Bar w="w-48" />
+        <Bar w="w-56" />
+      </div>
+    </div>
+  );
+}
+
+function SubscriptionsSkeleton() {
+  return (
+    <div className="space-y-4" aria-hidden>
+      {[0, 1].map((i) => (
+        <div key={i} className="space-y-3 border border-rule bg-paper p-5">
+          <Bar w="w-60" />
+          <Bar w="w-1/2" />
+          <Bar w="w-80" />
+          <Bar w="w-44" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ConnectGate({ view }: { view: View }) {
+  return (
+    <div className="relative">
+      <div className="pointer-events-none select-none opacity-30">
+        {view === "merchant" ? <MerchantSkeleton /> : <SubscriptionsSkeleton />}
+      </div>
+      <div className="absolute inset-0 z-10 grid place-items-center p-4">
+        <div className="w-full max-w-lg border border-ink bg-paper p-8 text-center shadow-[8px_8px_0_#17150e]">
+          {view === "merchant" ? (
+            <>
+              <p className="font-mono text-sm font-semibold text-ink">
+                CONNECT A WALLET TO CREATE AND MANAGE YOUR PLANS
+              </p>
+              <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-soft">
+                This is where subscriber payments land, and how you&apos;ll withdraw them. One tap —
+                your wallet asks you to add the Coston2 testnet.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-mono text-sm font-semibold text-ink">
+                CONNECT A WALLET TO VIEW YOUR SUBSCRIPTIONS
+              </p>
+              <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-soft">
+                This wallet is how you cancel and get refunds — only you control it.
+              </p>
+            </>
+          )}
+          <div className="mt-6 flex justify-center">
+            <NetworkNote />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AppShell() {
   const [view, setView] = useState<View>("merchant");
   const { address, isConnected } = useAccount();
@@ -55,27 +135,7 @@ export function AppShell() {
 
       <main className="flex-1 py-8">
         {!isConnected ? (
-          <div className="border border-dashed border-rule px-6 py-16 text-center">
-            {view === "merchant" ? (
-              <>
-                <p className="font-mono text-sm text-ink-soft">CONNECT A WALLET TO CREATE AND MANAGE YOUR PLANS</p>
-                <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-soft">
-                  This is where subscriber payments land, and how you&apos;ll withdraw them. One tap —
-                  your wallet asks you to add the Coston2 testnet.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="font-mono text-sm text-ink-soft">CONNECT A WALLET TO VIEW YOUR SUBSCRIPTIONS</p>
-                <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-soft">
-                  This wallet is how you cancel and get refunds — only you control it.
-                </p>
-              </>
-            )}
-            <div className="mt-5 flex justify-center">
-              <NetworkNote />
-            </div>
-          </div>
+          <ConnectGate view={view} />
         ) : view === "merchant" ? (
           <MerchantView me={address!} />
         ) : (
