@@ -7,6 +7,10 @@ import { shortAddr } from "../lib/format";
 
 const GITHUB = "https://github.com/bolajiev/drip";
 
+function scrollToId(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+}
+
 function Step({ n, title, body }: { n: string; title: string; body: string }) {
   return (
     <div className="border border-ink p-5">
@@ -37,7 +41,14 @@ export function Landing() {
             <span className="font-sans text-lg font-bold tracking-tight">DRIP</span>
           </Link>
           <nav className="flex items-center gap-5 font-mono text-xs font-semibold">
-            <a href="#how" className="hidden text-ink-soft transition-colors hover:text-ink sm:block">
+            <a
+              href="#how"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToId("how");
+              }}
+              className="hidden text-ink-soft transition-colors hover:text-ink sm:block"
+            >
               HOW IT WORKS
             </a>
             <Link to="/docs" className="text-ink-soft transition-colors hover:text-ink">
@@ -69,14 +80,18 @@ export function Landing() {
           chargebacks, no second signature.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <a
-            href="#launch"
+          <Link
+            to="/app"
             className="border border-ink bg-acid px-5 py-3 font-mono text-sm font-semibold tracking-tight text-ink transition-colors hover:bg-ink hover:text-paper"
           >
             LAUNCH APP
-          </a>
+          </Link>
           <a
             href="#how"
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToId("how");
+            }}
             className="border border-ink px-5 py-3 font-mono text-sm font-semibold tracking-tight transition-colors hover:bg-ink hover:text-paper"
           >
             HOW IT WORKS ↓

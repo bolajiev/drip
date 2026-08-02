@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
 
 import { usePlans, useSubscriptions, useStream, useFxrpBalance, useTotalWithdrawable } from "../lib/hooks";
@@ -153,8 +154,6 @@ function SubscriberRow({
 }) {
   const stream = useStream(streamId);
   const st = stream.data;
-  const isMine = st ? st.recipient.toLowerCase() === me.toLowerCase() : false;
-  if (!isMine) return null;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
@@ -168,6 +167,9 @@ function SubscriberRow({
         <span className="text-ink-soft">
           {st ? STATUS_LABEL[st.status] : active ? "ACTIVE" : "INACTIVE"}
         </span>
+        {!st && (
+          <span className="text-ink-soft">AWAITING FIRST CYCLE — NO STREAM YET</span>
+        )}
         {st && (
           <>
             <span>
@@ -200,8 +202,11 @@ export function MerchantView({ me }: { me: `0x${string}` }) {
   const { plans } = usePlans();
   const { subs } = useSubscriptions();
   const bal = useFxrpBalance(me);
-  const [refreshTick, setRefreshTick] = useState(0);
-  void refreshTick;
+  const qc = useQueryClient();
+  const onCreated = () => {
+    qc.invalidateQueries({ queryKey: ["nextPlanId"] });
+    qc.invalidateQueries({ queryKey: ["plan"] });
+  };
 
   const myPlans = plans.filter((p) => p.data && p.data[0].toLowerCase() === me.toLowerCase());
   const myPlanIds = new Set(myPlans.map((p) => p.id));
@@ -213,10 +218,10 @@ export function MerchantView({ me }: { me: `0x${string}` }) {
   return (
     <div className="space-y-8">
       {myPlans.length === 0 ? (
-        <CreatePlan onCreated={() => setRefreshTick((t) => t + 1)} />
+        <CreatePlan onCreated={onCreated} />
       ) : (
         <>
-          <CreatePlan onCreated={() => setRefreshTick((t) => t + 1)} />
+          <CreatePlan onCreated={onCreated} />
           <section className="border border-ink">
             <header className="flex items-center justify-between border-b border-ink bg-ink px-4 py-2">
               <h2 className="font-mono text-xs font-semibold tracking-tight text-paper">YOUR PLANS</h2>

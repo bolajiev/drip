@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAccount } from "wagmi";
 import { useWatchContractEvent } from "wagmi";
@@ -52,33 +52,20 @@ function PayStep({
   subscriptionId,
   sent,
   setSent,
+  ready,
 }: {
   tag: bigint;
   priceUba: bigint;
   subscriptionId: bigint;
   sent: boolean;
   setSent: (b: boolean) => void;
+  ready: boolean;
 }) {
   const priceXrp = Number(priceUba) / 1e6;
   const link = xamanPayLink(tag, priceXrp);
   const pending = useFxrpBalance(DRIP_SUBSCRIPTIONS);
-  const [mintDetected, setMintDetected] = useState(false);
 
-  useWatchContractEvent({
-    address: FXRP,
-    abi: fxrpAbi,
-    eventName: "Transfer",
-    args: { to: DRIP_SUBSCRIPTIONS },
-    onLogs: () => setMintDetected(true),
-    chainId: 114,
-  });
-
-  const status: "waiting" | "sent" | "ready" =
-    mintDetected || (pending.data !== undefined && pending.data > 0n)
-      ? "ready"
-      : sent
-        ? "sent"
-        : "waiting";
+  const status: "waiting" | "sent" | "ready" = ready ? "ready" : sent ? "sent" : "waiting";
 
   return (
     <section className="border border-ink">
@@ -223,12 +210,33 @@ function StreamView({
 export function SubscribePage() {
   const { planId } = useParams();
   const { address, isConnected } = useAccount();
-  const { plans } = usePlans();
+  const { loading, plans } = usePlans();
   const { subs } = useSubscriptions();
 
   const id = planId ? Number(planId) : NaN;
   const plan = plans.find((p) => p.id === id);
   const [sent, setSent] = useState(false);
+
+  const [mintDetected, setMintDetected] = useState(false);
+  const pendingInContract = useFxrpBalance(DRIP_SUBSCRIPTIONS);
+  const baselineRef = useRef<bigint | undefined>(undefined);
+  if (pendingInContract.data !== undefined && baselineRef.current === undefined) {
+    baselineRef.current = pendingInContract.data;
+  }
+  const mintReady =
+    mintDetected ||
+    (pendingInContract.data !== undefined &&
+      baselineRef.current !== undefined &&
+      pendingInContract.data > baselineRef.current);
+
+  useWatchContractEvent({
+    address: FXRP,
+    abi: fxrpAbi,
+    eventName: "Transfer",
+    args: { to: DRIP_SUBSCRIPTIONS },
+    onLogs: () => setMintDetected(true),
+    chainId: 114,
+  });
 
   const mySub = isConnected && address
     ? subs.find(
@@ -240,8 +248,7 @@ export function SubscribePage() {
   if (!isConnected || !address) step = "CONNECT";
   else if (!mySub?.data) step = "SUBSCRIBE";
   else if (mySub.data[3] > 0n) step = "STREAM";
-  else if (sent) step = "PAY";
-  else step = "PAY";
+  else step = mintReady ? "MINT" : "PAY";
 
   return (
     <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-5 sm:px-8">
@@ -259,7 +266,15 @@ export function SubscribePage() {
       </header>
 
       <main className="flex-1 space-y-6 py-10">
-        {!plan?.data && <p className="font-mono text-sm text-ink-soft">PLAN NOT FOUND — check the link.</p>}
+        {plan === undefined && loading && (
+          <p className="font-mono text-sm text-ink-soft">LOADING PLAN…</p>
+        )}
+        {plan === undefined && !loading && (
+          <p className="font-mono text-sm text-ink-soft">PLAN NOT FOUND — check the link.</p>
+        )}
+        {plan && !plan.data && (
+          <p className="font-mono text-sm text-ink-soft">LOADING PLAN…</p>
+        )}
         {plan?.data && (
           <>
             <section className="border border-ink">
@@ -319,6 +334,7 @@ export function SubscribePage() {
                 subscriptionId={BigInt(mySub.id)}
                 sent={sent}
                 setSent={setSent}
+                ready={mintReady}
               />
             )}
 

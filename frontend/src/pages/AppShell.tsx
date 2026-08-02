@@ -13,7 +13,7 @@ type View = "merchant" | "customer";
 const GITHUB = "https://github.com/bolajiev/drip";
 
 export function AppShell() {
-  const [view, setView] = useState<View>("customer");
+  const [view, setView] = useState<View>("merchant");
   const { address, isConnected } = useAccount();
 
   return (
