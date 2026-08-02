@@ -2,16 +2,18 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { http, createConfig } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { http } from "wagmi";
+import { getDefaultConfig, RainbowKitProvider, lightTheme } from "@rainbow-me/rainbowkit";
+import "@rainbow-me/rainbowkit/styles.css";
 
-import { coston2 } from "./lib/config";
+import { coston2, WALLETCONNECT_PROJECT_ID } from "./lib/config";
 import App from "./App";
 import "./index.css";
 
-const config = createConfig({
+const config = getDefaultConfig({
+  appName: "DRIP",
+  projectId: WALLETCONNECT_PROJECT_ID,
   chains: [coston2],
-  connectors: [injected()],
   transports: {
     [coston2.id]: http(),
   },
@@ -23,7 +25,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <RainbowKitProvider theme={lightTheme({ accentColor: "#17150e", borderRadius: "none" })}>
+          <App />
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   </StrictMode>

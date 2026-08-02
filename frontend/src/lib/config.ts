@@ -23,6 +23,10 @@ export const MINTING_TAG_MANAGER = "0x094511737909b626391106bBc21B25feb2D67B96" 
 export const FAUCET_URL = "https://faucet.flare.network/coston2";
 export const FXRP_DECIMALS = 6;
 
+// WalletConnect Cloud project (free, cloud.walletconnect.com) — enables
+// mobile wallet deep-links (RainbowKit modal).
+export const WALLETCONNECT_PROJECT_ID = "c6c0f7585abca53dc55e957c2bee95c8";
+
 // Coston2 FXRP Core Vault on XRPL — verified on-chain via
 // AssetManagerFXRP.directMintingPaymentAddress() (2026-08-01).
 export const FXRP_VAULT_XRPL = "rDhpmiPq4BVBDWMVdSrmkgt8thKyRzGV1p";

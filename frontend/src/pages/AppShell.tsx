@@ -14,26 +14,33 @@ function Bar({ w }: { w: string }) {
   return <span className={`block h-2 bg-rule ${w}`} />;
 }
 
+function Caption({ children }: { children: string }) {
+  return <p className="font-mono text-[10px] tracking-wide text-ink-soft">{children}</p>;
+}
+
 function MerchantSkeleton() {
   return (
-    <div className="space-y-8" aria-hidden>
-      <div className="flex items-center justify-between border border-rule bg-paper px-4 py-2">
-        <Bar w="w-44" />
-        <Bar w="w-24" />
-      </div>
-      <div className="flex flex-wrap items-center gap-4 border border-rule bg-paper p-4">
-        <span className="block h-24 w-24 border border-rule bg-paper-deep" />
-        <div className="space-y-3">
-          <Bar w="w-56" />
-          <Bar w="w-80" />
-          <Bar w="w-36" />
+    <div className="space-y-6" aria-hidden>
+      <div className="border border-rule bg-paper">
+        <div className="flex items-center justify-between border-b border-rule px-4 py-2">
+          <Bar w="w-44" />
+          <Bar w="w-24" />
+        </div>
+        <div className="flex flex-wrap items-center gap-4 p-4">
+          <span className="block h-24 w-24 border border-rule bg-paper-deep" />
+          <div className="space-y-3">
+            <Bar w="w-56" />
+            <Bar w="w-80" />
+            <Bar w="w-36" />
+          </div>
         </div>
       </div>
+      <Caption>YOUR PLANS — PRICE, LINK AND QR — WILL APPEAR HERE</Caption>
       <div className="space-y-3 border border-rule bg-paper p-4">
-        <Bar w="w-64" />
-        <Bar w="w-48" />
-        <Bar w="w-56" />
+        <Bar w="w-40" />
+        <Bar w="w-32" />
       </div>
+      <Caption>SUBSCRIBER COUNT AND WITHDRAWABLE BALANCE, LIVE</Caption>
     </div>
   );
 }
@@ -49,42 +56,47 @@ function SubscriptionsSkeleton() {
           <Bar w="w-44" />
         </div>
       ))}
+      <Caption>YOUR SUBSCRIPTIONS — STREAM, CANCEL, REFUND — WILL APPEAR HERE</Caption>
     </div>
   );
 }
 
 function ConnectGate({ view }: { view: View }) {
   return (
-    <div className="relative">
+    <div>
       <div className="pointer-events-none select-none opacity-30">
         {view === "merchant" ? <MerchantSkeleton /> : <SubscriptionsSkeleton />}
       </div>
-      <div className="absolute inset-0 z-10 grid place-items-center p-4">
-        <div className="w-full max-w-lg border border-ink bg-paper p-8 text-center shadow-[8px_8px_0_#17150e]">
-          {view === "merchant" ? (
-            <>
-              <p className="font-mono text-sm font-semibold text-ink">
-                CONNECT A WALLET TO CREATE AND MANAGE YOUR PLANS
-              </p>
-              <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-soft">
-                This is where subscriber payments land, and how you&apos;ll withdraw them. One tap —
-                your wallet asks you to add the Coston2 testnet.
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="font-mono text-sm font-semibold text-ink">
-                CONNECT A WALLET TO VIEW YOUR SUBSCRIPTIONS
-              </p>
-              <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-soft">
-                This wallet is how you cancel and get refunds — only you control it.
-              </p>
-            </>
-          )}
-          <div className="mt-6 flex justify-center">
-            <NetworkNote />
-          </div>
+      <div className="relative z-10 mx-auto -mt-10 w-full max-w-lg border border-ink bg-paper p-8 text-center shadow-[8px_8px_0_#17150e]">
+        {view === "merchant" ? (
+          <>
+            <p className="font-mono text-sm font-semibold text-ink">
+              CONNECT A WALLET TO CREATE AND MANAGE YOUR PLANS
+            </p>
+            <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-soft">
+              This is where subscriber payments land, and how you&apos;ll withdraw them. One tap —
+              your wallet asks you to add the Coston2 testnet.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="font-mono text-sm font-semibold text-ink">
+              CONNECT A WALLET TO VIEW YOUR SUBSCRIPTIONS
+            </p>
+            <p className="mt-3 font-mono text-[11px] leading-relaxed text-ink-soft">
+              This wallet is how you cancel and get refunds — only you control it.
+            </p>
+          </>
+        )}
+        <div className="mt-6 flex justify-center">
+          <NetworkNote />
         </div>
+      </div>
+      <div className="mx-auto mt-6 max-w-lg border border-rule bg-paper-deep/40 p-4">
+        <p className="font-mono text-[11px] leading-relaxed text-ink-soft">
+          Streaming logic forked from Sablier&apos;s audited contracts. Non-custodial — funds sit in
+          the contract, not with Drip. Cancel anytime, get back what hasn&apos;t streamed yet.
+        </p>
       </div>
     </div>
   );
@@ -95,7 +107,11 @@ export function AppShell() {
   const { address, isConnected } = useAccount();
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-5 sm:px-8">
+    <div
+      className={`mx-auto flex max-w-6xl flex-col px-5 sm:px-8 ${
+        isConnected ? "min-h-screen" : ""
+      }`}
+    >
       <header className="flex items-center justify-between border-b border-rule py-4">
         <Link to="/" className="flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center bg-ink">
@@ -133,7 +149,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="flex-1 py-8">
+      <main className={isConnected ? "flex-1 py-8" : "py-8"}>
         {!isConnected ? (
           <ConnectGate view={view} />
         ) : view === "merchant" ? (

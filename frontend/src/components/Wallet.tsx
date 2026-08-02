@@ -1,25 +1,24 @@
 import { useMemo } from "react";
-import { useAccount, useBalance, useConnect, useDisconnect } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
+import { ConnectButton as RkConnectButton, useConnectModal } from "@rainbow-me/rainbowkit";
 
 import { FAUCET_URL, FXRP_DECIMALS } from "../lib/config";
-import { shortAddr } from "../lib/format";
 
+/** Our styled connect button — opens the RainbowKit wallet modal (injected on desktop, wallet-app deep links on mobile). */
 export function ConnectButton({ className = "" }: { className?: string }) {
-  const { connect, connectors, isPending } = useConnect();
+  const { openConnectModal } = useConnectModal();
   return (
     <button
-      onClick={() => connect({ connector: connectors[0] })}
-      disabled={isPending}
-      className={`border border-ink bg-ink px-4 py-2 font-mono text-xs font-semibold tracking-tight text-paper transition-colors hover:bg-acid hover:text-ink disabled:opacity-50 ${className}`}
+      onClick={openConnectModal}
+      className={`border border-ink bg-ink px-4 py-2 font-mono text-xs font-semibold tracking-tight text-paper transition-colors hover:bg-acid hover:text-ink ${className}`}
     >
-      {isPending ? "CONNECTING…" : "CONNECT WALLET"}
+      CONNECT WALLET
     </button>
   );
 }
 
 export function Wallet() {
   const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
   const { data: c2flr } = useBalance({ address });
 
   if (!isConnected || !address) {
@@ -36,17 +35,16 @@ export function Wallet() {
       >
         + FAUCET
       </a>
-      <div className="flex items-center gap-2 border border-rule px-3 py-2 font-mono text-xs">
+      <div className="hidden items-center gap-2 border border-rule px-3 py-2 font-mono text-xs sm:flex">
         <span className="inline-block h-1.5 w-1.5 rounded-full bg-acid-deep" />
         {c2flr ? `${Number(c2flr.value / 10n ** 18n).toFixed(2)} C2FLR` : ""}
       </div>
-      <button
-        onClick={() => disconnect()}
-        className="border border-ink px-3 py-2 font-mono text-xs font-semibold transition-colors hover:bg-ink hover:text-paper"
-        title={address}
-      >
-        {shortAddr(address)}
-      </button>
+      <RkConnectButton
+        chainStatus="none"
+        showBalance={false}
+        accountStatus="address"
+        label="CONNECT WALLET"
+      />
     </div>
   );
 }
