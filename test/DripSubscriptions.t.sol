@@ -31,6 +31,8 @@ contract DripSubscriptionsTest is Test {
 
     uint128 internal constant PRICE = 100e6; // 100 FXRP per cycle
     uint40 internal constant CYCLE = 30 days;
+    string internal constant NAME = "Amaka's Newsletter";
+    string internal constant DESC = "Five issues a month on fintech.";
 
     function setUp() public {
         // Deploy the Flare-side mocks.
@@ -49,7 +51,7 @@ contract DripSubscriptionsTest is Test {
 
     function _createPlan() internal returns (uint256 planId) {
         vm.prank(MERCHANT);
-        planId = subscriptions.createPlan(PRICE, CYCLE);
+        planId = subscriptions.createPlan(NAME, DESC, PRICE, CYCLE);
     }
 
     function _subscribe(uint256 planId) internal returns (uint256 subscriptionId, uint256 tag) {
@@ -66,11 +68,14 @@ contract DripSubscriptionsTest is Test {
     function test_FullCycle_EndToEnd() public {
         // 1. Merchant creates a plan.
         uint256 planId = _createPlan();
-        (address merchant, uint128 price, uint40 cycleDuration, bool active) = subscriptions.plans(planId);
+        (address merchant, uint128 price, uint40 cycleDuration, bool active, string memory name, string memory desc) =
+            subscriptions.plans(planId);
         assertEq(merchant, MERCHANT);
         assertEq(price, PRICE);
         assertEq(cycleDuration, CYCLE);
         assertTrue(active);
+        assertEq(name, NAME);
+        assertEq(desc, DESC);
 
         // 2. Customer subscribes; a tag is reserved and bound to the wrapper.
         (uint256 subscriptionId, uint256 tag) = _subscribe(planId);
@@ -138,13 +143,19 @@ contract DripSubscriptionsTest is Test {
     function test_CreatePlan_RevertWhen_ZeroPrice() public {
         vm.prank(MERCHANT);
         vm.expectRevert(Errors.DripSubscriptions_InvalidPlan.selector);
-        subscriptions.createPlan(0, CYCLE);
+        subscriptions.createPlan(NAME, DESC, 0, CYCLE);
     }
 
     function test_CreatePlan_RevertWhen_ZeroDuration() public {
         vm.prank(MERCHANT);
         vm.expectRevert(Errors.DripSubscriptions_InvalidPlan.selector);
-        subscriptions.createPlan(PRICE, 0);
+        subscriptions.createPlan(NAME, DESC, PRICE, 0);
+    }
+
+    function test_CreatePlan_RevertWhen_EmptyName() public {
+        vm.prank(MERCHANT);
+        vm.expectRevert(Errors.DripSubscriptions_InvalidPlan.selector);
+        subscriptions.createPlan("", DESC, PRICE, CYCLE);
     }
 
     function test_Subscribe_RevertWhen_PlanInactive() public {
@@ -203,6 +214,41 @@ contract DripSubscriptionsTest is Test {
             abi.encodeWithSelector(Errors.DripSubscriptions_SubscriptionNotActive.selector, subscriptionId)
         );
         subscriptions.finalize(subscriptionId);
+    }
+
+    function test_IsActive_Lifecycle() public {
+        uint256 planId = _createPlan();
+        (uint256 subscriptionId,) = _subscribe(planId);
+
+        // Not paid up before any payment.
+        assertFalse(subscriptions.isActive(CUSTOMER));
+
+        // Paid up once the payment is finalized into a live stream.
+        _simulatePayment(PRICE);
+        subscriptions.finalize(subscriptionId);
+        assertTrue(subscriptions.isActive(CUSTOMER));
+        assertEq(subscriptions.lastStreamOf(CUSTOMER), 1);
+
+        // Still active mid-cycle, including after the merchant withdraws part of the accrued amount.
+        vm.warp(block.timestamp + CYCLE / 2);
+        vm.prank(MERCHANT);
+        lockup.withdrawMax(1, MERCHANT);
+        assertTrue(subscriptions.isActive(CUSTOMER));
+
+        // No longer paid up once the stream is canceled.
+        vm.prank(CUSTOMER);
+        lockup.cancel(1);
+        assertFalse(subscriptions.isActive(CUSTOMER));
+
+        // Renewal re-opens coverage: a new payment + finalize flips it back on.
+        _simulatePayment(PRICE);
+        subscriptions.finalize(subscriptionId);
+        assertTrue(subscriptions.isActive(CUSTOMER));
+        assertEq(subscriptions.lastStreamOf(CUSTOMER), 2);
+    }
+
+    function test_IsActive_UnknownCustomer() public view {
+        assertFalse(subscriptions.isActive(OTHER));
     }
 
     function test_DeactivateSubscription_RevertWhen_StreamNotCanceled() public {

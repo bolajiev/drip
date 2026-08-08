@@ -11,6 +11,7 @@ optimizer_runs = 200
 remappings = [
     "@prb/math/=lib/prb-math/",
 ]
+via_ir = true
 
 [fmt]
 line_length = 120

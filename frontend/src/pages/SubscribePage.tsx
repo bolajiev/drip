@@ -280,7 +280,7 @@ export function SubscribePage() {
             <section className="border border-ink">
               <header className="border-b border-ink bg-ink px-4 py-2">
                 <h1 className="font-mono text-xs font-semibold tracking-tight text-paper">
-                  SUBSCRIBE TO PLAN #{id}
+                  SUBSCRIBE{plan.data[4] ? ` — ${plan.data[4].toUpperCase()}` : ""} · PLAN #{id}
                 </h1>
               </header>
               <div className="flex flex-wrap items-center justify-between gap-4 p-5">
@@ -291,6 +291,11 @@ export function SubscribePage() {
                   <div className="mt-1 font-mono text-[11px] text-ink-soft">
                     EVERY {fmtSeconds(Number(plan.data[2]))} · FROM MERCHANT {shortAddr(plan.data[0])}
                   </div>
+                  {plan.data[5] && (
+                    <div className="mt-2 max-w-lg font-mono text-[11px] leading-relaxed text-ink-soft">
+                      {plan.data[5]}
+                    </div>
+                  )}
                 </div>
                 <div className="w-full max-w-md">
                   <Stepper step={step} />

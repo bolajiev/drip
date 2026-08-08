@@ -3,6 +3,8 @@ export const subscriptionsAbi = [
     type: "function",
     name: "createPlan",
     inputs: [
+      { name: "name", type: "string" },
+      { name: "description", type: "string" },
       { name: "pricePerCycle", type: "uint128" },
       { name: "cycleDuration", type: "uint40" },
     ],
@@ -84,6 +86,8 @@ export const subscriptionsAbi = [
       { name: "pricePerCycle", type: "uint128" },
       { name: "cycleDuration", type: "uint40" },
       { name: "active", type: "bool" },
+      { name: "name", type: "string" },
+      { name: "description", type: "string" },
     ],
     stateMutability: "view",
   },

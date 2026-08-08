@@ -20,7 +20,7 @@ export function usePlans() {
       queryKey: ["plan", id],
       queryFn: () =>
         readContract(config, { ...base, functionName: "plans", args: [BigInt(id)] }) as Promise<
-          readonly [string, bigint, number, boolean]
+          readonly [string, bigint, number, boolean, string, string]
         >,
       refetchInterval: 5000,
     })),

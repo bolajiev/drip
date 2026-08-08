@@ -61,11 +61,15 @@ contract DripSubscriptions is IERC721Receiver {
     /// @param pricePerCycle The expected FXRP amount per billing cycle, in UBA (6 decimals).
     /// @param cycleDuration The billing period in seconds.
     /// @param active Whether new customers can subscribe.
+    /// @param name The plan's display name (what customers see on the subscribe page).
+    /// @param description A short description of what the subscription covers.
     struct Plan {
         address merchant;
         uint128 pricePerCycle;
         uint40 cycleDuration;
         bool active;
+        string name;
+        string description;
     }
 
     /// @notice A customer's subscription to a plan.
@@ -89,7 +93,14 @@ contract DripSubscriptions is IERC721Receiver {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when a merchant creates a plan.
-    event PlanCreated(uint256 indexed planId, address indexed merchant, uint128 pricePerCycle, uint40 cycleDuration);
+    event PlanCreated(
+        uint256 indexed planId,
+        address indexed merchant,
+        uint128 pricePerCycle,
+        uint40 cycleDuration,
+        string name,
+        string description
+    );
 
     /// @notice Emitted when a merchant deactivates a plan.
     event PlanDeactivated(uint256 indexed planId);
@@ -135,12 +146,19 @@ contract DripSubscriptions is IERC721Receiver {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Registers a subscription plan. The caller becomes the merchant.
+    /// @param name The plan's display name (e.g. "Amaka's Newsletter"). Required.
+    /// @param description A short description of what the subscription covers. Optional.
     /// @param pricePerCycle The expected FXRP amount per billing cycle, in UBA.
     /// @param cycleDuration The billing period in seconds.
     /// @return planId The id of the newly created plan.
-    function createPlan(uint128 pricePerCycle, uint40 cycleDuration) external returns (uint256 planId) {
-        // Check: the price and the cycle duration are not zero.
-        if (pricePerCycle == 0 || cycleDuration == 0) {
+    function createPlan(
+        string calldata name,
+        string calldata description,
+        uint128 pricePerCycle,
+        uint40 cycleDuration
+    ) external returns (uint256 planId) {
+        // Check: the name is not empty, and the price and the cycle duration are not zero.
+        if (bytes(name).length == 0 || pricePerCycle == 0 || cycleDuration == 0) {
             revert Errors.DripSubscriptions_InvalidPlan();
         }
 
@@ -148,7 +166,14 @@ contract DripSubscriptions is IERC721Receiver {
         planId = nextPlanId;
 
         // Effect: store the plan.
-        plans[planId] = Plan({ merchant: msg.sender, pricePerCycle: pricePerCycle, cycleDuration: cycleDuration, active: true });
+        plans[planId] = Plan({
+            merchant: msg.sender,
+            pricePerCycle: pricePerCycle,
+            cycleDuration: cycleDuration,
+            active: true,
+            name: name,
+            description: description
+        });
 
         unchecked {
             // Effect: bump the next plan ID.
@@ -156,7 +181,7 @@ contract DripSubscriptions is IERC721Receiver {
         }
 
         // Log the creation of the plan.
-        emit PlanCreated(planId, msg.sender, pricePerCycle, cycleDuration);
+        emit PlanCreated(planId, msg.sender, pricePerCycle, cycleDuration, name, description);
     }
 
     /// @notice Deactivates a plan so new customers cannot subscribe. Existing subscriptions are unaffected.
@@ -245,6 +270,7 @@ contract DripSubscriptions is IERC721Receiver {
         // Effect: record the new stream.
         subscription.streamId = streamId;
         subscription.cycle += 1;
+        lastStreamOf[subscription.customer] = streamId;
 
         // Log the finalized payment.
         emit SubscriptionFinalized(subscriptionId, streamId, subscription.cycle, uint128(amount));
@@ -279,11 +305,25 @@ contract DripSubscriptions is IERC721Receiver {
                           USER-FACING READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /// @dev The most recently finalized stream per customer, used by {isActive}.
+    mapping(address customer => uint256 streamId) public lastStreamOf;
+
     /// @notice Returns the FXRP balance that has arrived (via direct mints) but has not yet been
     ///         credited to a stream by {finalize}. FXRP can only leave this contract through {finalize},
     ///         so this is simply the contract's FXRP balance.
     function pendingFxrp() public view returns (uint256) {
         return fxrp.balanceOf(address(this));
+    }
+
+    /// @notice Returns whether a customer is currently paid up: their most recently finalized
+    ///         stream is still streaming.
+    /// @dev This is the building block a merchant wires into their own access control ("is this
+    ///      address currently subscribed?"). It gates nothing itself — it only reports status.
+    /// @param customer The customer address.
+    /// @return Whether the customer's latest cycle is live right now.
+    function isActive(address customer) external view returns (bool) {
+        uint256 streamId = lastStreamOf[customer];
+        return streamId != 0 && lockup.statusOf(streamId) == Lockup.Status.STREAMING;
     }
 
     /*//////////////////////////////////////////////////////////////////////////

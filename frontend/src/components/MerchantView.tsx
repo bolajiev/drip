@@ -48,12 +48,36 @@ function ChecklistRow({
 }
 
 function PriceForm({ onCreated }: { onCreated: () => void }) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [price, setPrice] = useState("5");
   const uba = BigInt(Math.round(parseFloat(price || "0") * 1e6));
 
   return (
     <div className="mt-3 border border-rule bg-paper p-4">
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1 block font-mono text-[10px] text-ink-soft">PLAN NAME *</span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={40}
+            placeholder="Amaka's Newsletter"
+            className="w-full border border-rule bg-paper px-3 py-2 font-mono text-sm outline-none focus:border-ink"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block font-mono text-[10px] text-ink-soft">SHORT DESCRIPTION</span>
+          <input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={120}
+            placeholder="Weekly deep-dive on DeFi rails"
+            className="w-full border border-rule bg-paper px-3 py-2 font-mono text-sm outline-none focus:border-ink"
+          />
+        </label>
+      </div>
+      <div className="mt-3 flex flex-wrap items-end gap-3">
         <label className="block">
           <span className="mb-1 block font-mono text-[10px] text-ink-soft">PRICE PER CYCLE (FXRP)</span>
           <input
@@ -67,8 +91,8 @@ function PriceForm({ onCreated }: { onCreated: () => void }) {
           abi={subscriptionsAbi}
           address={DRIP_SUBSCRIPTIONS}
           functionName="createPlan"
-          args={[uba, BigInt(MONTHLY_SECONDS)]}
-          disabled={!uba}
+          args={[name.trim(), description.trim(), uba, BigInt(MONTHLY_SECONDS)]}
+          disabled={!name.trim() || !uba}
           onSettled={onCreated}
         >
           CREATE PLAN
@@ -107,8 +131,8 @@ function SetupChecklist({ me, onCreated }: { me: `0x${string}`; onCreated: () =>
         <ChecklistRow
           active
           step="2"
-          title="SET YOUR PRICE"
-          body="Name the price in FXRP and how often it bills. You can add more plans later."
+          title="NAME YOUR PLAN & SET YOUR PRICE"
+          body="Give it a name and a price in FXRP. Billing is monthly and locked. You can add more plans later."
           extra={<PriceForm onCreated={onCreated} />}
         />
         <ChecklistRow
@@ -123,6 +147,8 @@ function SetupChecklist({ me, onCreated }: { me: `0x${string}`; onCreated: () =>
 
 function PlanCard({
   id,
+  name,
+  description,
   price,
   duration,
   active,
@@ -131,6 +157,8 @@ function PlanCard({
   streamIds,
 }: {
   id: number;
+  name: string;
+  description: string;
   price: bigint;
   duration: number;
   active: boolean;
@@ -147,7 +175,7 @@ function PlanCard({
     <div className="border border-ink">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-ink bg-ink px-4 py-2">
         <h3 className="font-mono text-xs font-semibold tracking-tight text-paper">
-          PLAN #{id} · {fmtFxrp(price)} FXRP / {fmtSeconds(duration)}
+          {name || `PLAN #${id}`} · {fmtFxrp(price)} FXRP / {fmtSeconds(duration)}
         </h3>
         <span className={`font-mono text-[10px] ${active ? "text-acid" : "text-paper/50"}`}>
           {active ? "ACTIVE" : "INACTIVE"}
@@ -160,6 +188,9 @@ function PlanCard({
         <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] text-ink-soft">YOUR SUBSCRIBE LINK</p>
           <p className="truncate font-mono text-xs text-ink">{link}</p>
+          {description && (
+            <p className="mt-1 font-mono text-[11px] leading-relaxed text-ink-soft">{description}</p>
+          )}
           <p className="mt-1.5 font-mono text-[11px] tabular-nums text-ink-soft">
             {streamIds.length} SUBSCRIBER{streamIds.length === 1 ? "" : "S"} · WITHDRAWABLE{" "}
             <b className="text-ink">{fmtFxrp(planWithdrawable)}</b> FXRP
@@ -306,6 +337,8 @@ export function MerchantView({ me }: { me: `0x${string}` }) {
                   <PlanCard
                     key={p.id}
                     id={p.id}
+                    name={p.data[4]}
+                    description={p.data[5]}
                     price={p.data[1]}
                     duration={p.data[2]}
                     active={p.data[3]}

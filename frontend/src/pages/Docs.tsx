@@ -81,7 +81,7 @@ export function Docs() {
             <li>
               <b className="text-ink">DripSubscriptions</b> — thin factory: maps a subscription /
               destination tag to a merchant + billing period, receives the minted FXRP, opens the
-              stream. The only new logic in the project.
+              stream. Plans carry a name + description. The only new logic in the project.
             </li>
             <li>
               <b className="text-ink">DripLockup</b> — minimal fork of Sablier&apos;s{" "}
@@ -93,6 +93,19 @@ export function Docs() {
               are resolved via <code>FlareContractRegistry</code>, never hardcoded.
             </li>
           </ul>
+        </Block>
+
+        <Block title="ACCESS CONTROL FOR MERCHANTS">
+          <p className="max-w-2xl">
+            <code className="text-ink">isActive(customer)</code> on DripSubscriptions answers the
+            question a gated product asks before serving a customer:{" "}
+            <i>&quot;is this address paid up right now?&quot;</i>. It returns true while the
+            customer&apos;s most recently finalized cycle is still streaming (their last stream
+            exists and has status STREAMING). The contract gates nothing itself — it is the read
+            a merchant wires into their own paywall: check <code>isActive</code>, serve or deny.
+            A renewal (new payment finalized) keeps it true; a cancellation flips it false at the
+            moment the stream ends.
+          </p>
         </Block>
 
         <Block title="DEPLOYMENT (COSTON2)">
@@ -116,8 +129,8 @@ export function Docs() {
               format, gotchas), <code>LANDING.md</code> / <code>APP.md</code> (product specs).
             </p>
             <p>
-              Tests: <code>forge test</code> — 21 tests covering the full subscribe → stream → cancel
-              cycle, including the ERC-721 tag reservation and exact refunds.
+              Tests: <code>forge test</code> — 24 tests covering the full subscribe → stream →
+              cancel cycle, named plans, tag reservation and exact refunds.
             </p>
           </div>
         </Block>

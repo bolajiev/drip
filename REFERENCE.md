@@ -57,9 +57,12 @@ contract, especially anything marked "confirm" below.
 
 ## Drip deployment (Coston2, Aug 1 2026)
 
-**LIVE deployment (final):**
-- **DripLockup**: `0x0Dbe50349C0CF45e8cF5417E100fc63a9fdb6589`
-- **DripSubscriptions**: `0x79fa101D31d30e764394b115E9738d27B185f3d9`
+**LIVE deployment (v2, Aug 8 2026 — named plans + isActive):**
+- **DripSubscriptions**: `0x2032C37ff66312788262E542E9a50c71ba5c2830`
+  (Plan struct gained `name` + `description`; `createPlan(name, description,
+  pricePerCycle, cycleDuration)`; `isActive(customer)` = last finalized
+  stream still STREAMING; `lastStreamOf` mapping)
+- **DripLockup**: `0x0Dbe50349C0CF45e8cF5417E100fc63a9fdb6589` (unchanged)
 - **LockupMath** (library): `0xFeF1acf30d4B2B1Fb275895735aFF471db005e6b`
 - **Helpers** (library): `0x7665058e08F74AD0E556aC42cF62b6E10F5b4E8B`
 - **FXRP** (resolved at runtime): `0x0b6A3645c240605887a5532109323A3E12273dc7`
@@ -78,6 +81,24 @@ deactivated.
 → merchant), left live for the demo. Customer wallet key in
 `/tmp/opencode/faucet-wallet.txt` (session-local, not in repo).
 
+**E2E verified on-chain (v2, Aug 8 2026 — the full SUBMIT cycle):**
+- Plan 1 = "Amaka's Newsletter" / "Weekly deep-dive on DeFi rails", 5 FXRP /
+  300s, active (created via cast — the UI locks monthly for merchants; the
+  short cycle makes the stream visibly move during demos).
+- Subscribe → tag **358** reserved on MintingTagManager (ERC-721 minted to
+  the v2 wrapper, 100 C2FLR fee) → payment 5 FXRP (simulated mint) →
+  finalize → **stream 3** STREAMING → merchant `withdrawMax` partial
+  (1.52 FXRP of the 5) → customer `cancel` → 3.13 FXRP refunded (vesting
+  continued between reads; `isActive` = false) → renewal: same tag 358,
+  no re-onboarding, pay 5 FXRP + finalize → **stream 4** STREAMING, cycle 2,
+  `isActive` = true. `lastStreamOf` tracks the newest stream per customer.
+- Live demo state: subscription 1 (tag 358) / stream 4 STREAMING on v2;
+  plan 1 (5 FXRP/300s) on v1 with stream 2 still settled.
+
+**v1 contract (superseded by v2, don't use):** `0x79fa101D31d30e764394b115E9738d27B185f3d9`
+— still holds plan 1 / sub 2 (tag 258) demo state; v2 has no plans or
+subscriptions yet (fresh slate for the named-plan demo).
+
 **Stale deployments (superseded, don't use):** lockup
 `0xDe97183b5CCb436440c2250E51579f12E4A6Cb1b` / wrapper
 `0x81578ED3ea764EaEb1B345a5A024634C7900B28B` (pre-string-interface),
@@ -85,9 +106,19 @@ lockup `0x90846549d26283A59275c75b853cd249b5CFF0F1` / wrapper
 `0xd6921ed112eD0F366bDeDA75183e3379b5fF0736` (pre-ERC721-receiver).
 ~100 C2FLR stuck in `0xd6921e...` (no spend path) — testnet, acceptable.
 
-**Wallets:** deployer/merchant `0xF1D25481431CFc0226b706C240A390aCbbeDafd9`,
-customer `0x464C34704d76944C29672346d4532e22c43220e2`, faucet-spare
-`0x80F6C3a87cC0b113c09637893Fe2Ad7503E3c5aC` (unused ~83 C2FLR).
+**Wallets:** deployer/merchant `0xF1D25481431CFc0226b706C240A390aCbbeDafd9`
+(key `0xde064f4b...`), demo customer `0x928047e135bB8F1E1EC805d571e7732F9b675dBf`
+(key `0xc866d895...`, `/tmp/opencode/faucet-wallet.txt`), old customer
+`0x464C34704d76944C29672346d4532e22c43220e2` (key `0x3c920168...`), spare
+`0x80F6C3a87cC0b113c09637893Fe2Ad7503E3c5aC` (key lost across sessions —
+~76.9 C2FLR inaccessible, treat as stuck), `0xDbf0077E2813209A79CD4716F04D7072B36F6A59`
+(key in `/tmp/opencode/eoa.json`).
+
+**Funding situation (Aug 8 2026):** on-chain faucet
+`0x1000000000000000000000000000000000000001` pool is dry (balance 0, calls
+revert); tag reservation fee is 100 C2FLR per new subscription. Funding must
+come from the web faucet (faucet.flare.network/coston2, ~25 C2FLR/request,
+captcha). Gas price spiked to ~650 gwei.
 
 **Gotchas learned:**
 - Registry `getContractAddressByName` takes a dynamic `string`, not `bytes32`.
@@ -105,6 +136,12 @@ customer `0x464C34704d76944C29672346d4532e22c43220e2`, faucet-spare
   for token transfers when the sender's balance is thin — pass
   `--gas-limit` explicitly.
 - Deployer runs out of gas fast at ~1.6k gwei; keep ≥5 C2FLR buffer.
+- fAsset (FXRP) `transfer` needs ~151k gas — a `--gas-limit 100000` reverts
+  out-of-gas (gasUsed == gasLimit, no logs). Let cast estimate, or use
+  `--gas-limit 200000`.
+- On-chain faucet `0x1000000000000000000000000000000000000001` pool is
+  donation-funded; when empty it reverts at execution. Web faucet
+  (faucet.flare.network/coston2) is the reliable on-ramp (~25 C2FLR/request).
 
 ## Frontend (`frontend/`, Aug 1 2026)
 
@@ -140,7 +177,9 @@ recomputes vested amount client-side every 100ms, on-chain reads poll at 5s).
   live contract — verified via eth_call) in `src/lib/abis.ts`.
 - Verification: all read calls (`nextPlanId`, `plans(1)`, `nextSubscriptionId`,
   `subscriptions(1)`) confirmed returning live state (plan 1 = 5 FXRP/300s
-  active; subscription 1 = tag 257, stream 1, cycle 1, deactivated).
+  active; subscription 1 = tag 257, stream 1, cycle 1, deactivated — v1).
+  v2 reads (plans(1) 6-tuple incl. name/description, subscriptions(1) =
+  tag 358/stream 4/cycle 2, `isActive`) confirmed live.
 
 ## Direct mint (deferred)
 
