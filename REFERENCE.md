@@ -94,6 +94,11 @@ deactivated.
   `isActive` = true. `lastStreamOf` tracks the newest stream per customer.
 - Live demo state: subscription 1 (tag 358) / stream 4 STREAMING on v2;
   plan 1 (5 FXRP/300s) on v1 with stream 2 still settled.
+- **Sustained-drip demo (Aug 8):** plan 2 = "DRIP SIGNALS" / "Daily market
+  signals, streamed in real time", 5 FXRP / **3600s**, sub 2, tag **359**,
+  **stream 5 STREAMING** (customer → merchant, 1h window, ~1388 UBA/s —
+  withdrawable ticks every ~7s on the live dashboard). This is the state
+  judges should see: https://frontend-beta-black-19.vercel.app/#/s/2.
 
 **v1 contract (superseded by v2, don't use):** `0x79fa101D31d30e764394b115E9738d27B185f3d9`
 — still holds plan 1 / sub 2 (tag 258) demo state; v2 has no plans or
