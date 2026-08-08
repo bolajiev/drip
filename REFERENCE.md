@@ -98,7 +98,7 @@ deactivated.
   signals, streamed in real time", 5 FXRP / **3600s**, sub 2, tag **359**,
   **stream 5 STREAMING** (customer → merchant, 1h window, ~1388 UBA/s —
   withdrawable ticks every ~7s on the live dashboard). This is the state
-  judges should see: https://frontend-beta-black-19.vercel.app/#/s/2.
+  judges should see: **https://dripfxrp.vercel.app/#/s/2**.
 
 **v1 contract (superseded by v2, don't use):** `0x79fa101D31d30e764394b115E9738d27B185f3d9`
 — still holds plan 1 / sub 2 (tag 258) demo state; v2 has no plans or
@@ -176,8 +176,10 @@ recomputes vested amount client-side every 100ms, on-chain reads poll at 5s).
   `CoreVaultManager` resolves to zero — use the direct call).
 - Deploy: Vercel (token in env of this session), `vercel.json` = framework
   vite, build `npm run build`, output `dist`. Live:
-  **https://frontend-beta-black-19.vercel.app** (aliased; prod deploys via
-  `npx vercel deploy --prod --token <vcp_...>`).
+  **https://dripfxrp.vercel.app** (canonical submission URL; aliased, prod
+  deploys via `npx vercel deploy --prod --token <vcp_...>` then
+  `npx vercel alias set <deployment> dripfxrp.vercel.app`; `drip.vercel.app`
+  is taken; legacy alias `frontend-beta-black-19.vercel.app` still works).
 - Contract addresses live in `src/lib/config.ts`; ABIs (hand-written, match
   live contract — verified via eth_call) in `src/lib/abis.ts`.
 - Verification: all read calls (`nextPlanId`, `plans(1)`, `nextSubscriptionId`,
