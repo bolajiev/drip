@@ -37,6 +37,13 @@ export const subscriptionsAbi = [
   },
   {
     type: "function",
+    name: "refundPending",
+    inputs: [{ name: "subscriptionId", type: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "deactivateSubscription",
     inputs: [{ name: "subscriptionId", type: "uint256" }],
     outputs: [],
@@ -44,8 +51,35 @@ export const subscriptionsAbi = [
   },
   {
     type: "function",
+    name: "planSubscriptionOf",
+    inputs: [
+      { name: "planId", type: "uint256" },
+      { name: "customer", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "isActive",
+    inputs: [{ name: "customer", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "isActive",
+    inputs: [
+      { name: "planId", type: "uint256" },
+      { name: "customer", type: "address" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "pendingFxrp",
-    inputs: [],
+    inputs: [{ name: "subscriptionId", type: "uint256" }],
     outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
   },
@@ -102,6 +136,7 @@ export const subscriptionsAbi = [
       { name: "streamId", type: "uint256" },
       { name: "cycle", type: "uint256" },
       { name: "active", type: "bool" },
+      { name: "escrow", type: "address" },
     ],
     stateMutability: "view",
   },
@@ -220,5 +255,36 @@ export const fxrpAbi = [
     ],
     outputs: [{ name: "", type: "bool" }],
     stateMutability: "nonpayable",
+  },
+] as const;
+
+export const assetManagerAbi = [
+  {
+    type: "function",
+    name: "directMintingPaymentAddress",
+    inputs: [],
+    outputs: [{ name: "", type: "string" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getDirectMintingExecutorFeeUBA",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getDirectMintingFeeBIPS",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getDirectMintingMinimumFeeUBA",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
   },
 ] as const;

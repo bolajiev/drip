@@ -101,4 +101,11 @@ library Errors {
 
     /// @notice Thrown when trying to deactivate a subscription whose current stream has not been canceled.
     error DripSubscriptions_StreamNotCanceled(uint256 subscriptionId);
+
+    /// @notice Thrown when trying to subscribe to a plan the customer is already subscribed to.
+    error DripSubscriptions_AlreadySubscribed(uint256 planId, address customer);
+
+    /// @notice Thrown when trying to finalize or refund while the current cycle is still streaming.
+    /// @dev Overlapping streams are not allowed; early renewal payments wait in the escrow.
+    error DripSubscriptions_CycleStillStreaming(uint256 subscriptionId);
 }

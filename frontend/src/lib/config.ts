@@ -16,12 +16,18 @@ export const coston2 = defineChain({
 
 // Deployed on Coston2, 2026-08-01 (see REFERENCE.md).
 export const DRIP_LOCKUP = "0x0Dbe50349C0CF45e8cF5417E100fc63a9fdb6589" as const;
-// v2 (named plans + isActive), deployed 2026-08-08. v1 was 0x79fa101D31d30e764394b115E9738d27B185f3d9.
-export const DRIP_SUBSCRIPTIONS = "0x2032C37ff66312788262E542E9a50c71ba5c2830" as const;
+// v3 (per-subscription escrow + no-overlap guard), deployed 2026-08-09.
+// v2 (named plans + isActive) was 0x2032C37ff66312788262E542E9a50c71ba5c2830,
+// v1 (memo-based) was 0x79fa101D31d30e764394b115E9738d27B185f3d9.
+export const DRIP_SUBSCRIPTIONS = "0xe55dc9Fbe39feBa6A6cAD0347F5F17E3af5501CB" as const;
 export const FXRP = "0x0b6A3645c240605887a5532109323A3E12273dc7" as const;
 export const MINTING_TAG_MANAGER = "0x094511737909b626391106bBc21B25feb2D67B96" as const;
 
+export const ASSET_MANAGER = "0xc1Ca88b937d0b528842F95d5731ffB586f4fbDFA" as const;
+
 export const FAUCET_URL = "https://faucet.flare.network/coston2";
+export const XRPL_TESTNET_WALLET_URL = "https://testnet.xrpl.org/";
+export const XRPL_FAUCET_URL = "https://xrpl.org/resources/dev-tools/xrp-faucets";
 export const FXRP_DECIMALS = 6;
 
 // WalletConnect Cloud project (free, cloud.walletconnect.com) — enables

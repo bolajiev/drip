@@ -53,13 +53,21 @@ export function Docs() {
             </li>
             <li>
               <b className="text-ink">Mint.</b> An FAssets executor calls{" "}
-              <code>executeDirectMinting</code> on Flare; FXRP mints straight into Drip&apos;s
-              subscription contract. No Drip backend involved.
+              <code>executeDirectMinting</code> on Flare; FXRP mints straight into the
+              subscription&apos;s dedicated escrow contract (the minting tag is bound to the escrow,
+              so tag 369 always lands in that subscription&apos;s escrow). No Drip backend involved.
+            </li>
+            <li>
+              <b className="text-ink">Finalize.</b> When the payment lands, anyone can call{" "}
+              <code>finalize</code>: the escrow&apos;s balance is pulled into a fresh linear stream
+              and the cycle starts. Early renewal payments wait in the escrow — the contract never
+              opens overlapping streams (the no-overlap guard reverts).
             </li>
             <li>
               <b className="text-ink">Stream.</b> The contract deposits the minted FXRP into a
               Sablier-style <code>LockupLinear</code> stream targeting the merchant, with start/end
-              times matching the billing period.
+              times matching the billing period. The stream&apos;s sender is the customer, so they
+              can cancel it directly.
             </li>
             <li>
               <b className="text-ink">Merchant.</b> Withdraws vested FXRP at any time (standard
@@ -80,8 +88,10 @@ export function Docs() {
           <ul className="space-y-2">
             <li>
               <b className="text-ink">DripSubscriptions</b> — thin factory: maps a subscription /
-              destination tag to a merchant + billing period, receives the minted FXRP, opens the
-              stream. Plans carry a name + description. The only new logic in the project.
+              destination tag to a merchant + billing period. Each subscription gets its own
+              escrow (the tag&apos;s minting recipient); <code>finalize</code> converts escrow
+              balances into streams, <code>refundPending</code> returns un-credited payments. Plans
+              carry a name + description. The only new logic in the project.
             </li>
             <li>
               <b className="text-ink">DripLockup</b> — minimal fork of Sablier&apos;s{" "}
@@ -129,8 +139,9 @@ export function Docs() {
               format, gotchas), <code>LANDING.md</code> / <code>APP.md</code> (product specs).
             </p>
             <p>
-              Tests: <code>forge test</code> — 24 tests covering the full subscribe → stream →
-              cancel cycle, named plans, tag reservation and exact refunds.
+              Tests: <code>forge test</code> — 34 tests covering the full subscribe → stream →
+              cancel cycle, named plans, per-subscription escrows, the no-overlap guard and
+              exact refunds.
             </p>
           </div>
         </Block>

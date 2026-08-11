@@ -1,0 +1,65 @@
+[
+  {
+    "id": "y1",
+    "text": "Subscriptions are broken. Cards auto-charge forever, and cancelling means fighting for a refund.",
+    "caption": "SUBSCRIPTIONS ARE BROKEN",
+    "sub": "Auto-charges · no refunds · no control",
+    "visual": "s1"
+  },
+  {
+    "id": "y2",
+    "text": "Drip rebuilds recurring payments on the XRP rails. One XRP payment with your destination tag — and Flare mints FXRP straight into your escrow. No agents, no collateral, no bridge.",
+    "caption": "ONE XRP PAYMENT + TAG → FXRP IN ESCROW",
+    "sub": "Flare mints in ~2 minutes · no agents, no bridge",
+    "visual": "s2"
+  },
+  {
+    "id": "y3",
+    "text": "Your stream opens automatically, sending value to the merchant every single second. No second signature, no chargebacks.",
+    "caption": "STREAM OPENS AUTOMATICALLY",
+    "sub": "Merchant paid every second · no second signature",
+    "visual": "s4"
+  },
+  {
+    "id": "y4",
+    "text": "And it's not a mock-up. This is the actual payment — five point two XRP, destination tag three seven seven, live on the XRP Ledger.",
+    "caption": "THE ACTUAL PAYMENT",
+    "sub": "5.20 XRP · tag 377 · XRPL testnet",
+    "visual": "p2"
+  },
+  {
+    "id": "y5",
+    "text": "Two minutes later, the executor mints exactly five FXRP into your escrow. Check the chain yourself — the mint is right there.",
+    "caption": "THE ACTUAL MINT",
+    "sub": "5 FXRP → escrow · DirectMintingExecuted",
+    "visual": "p3"
+  },
+  {
+    "id": "y6",
+    "text": "Try to open a second stream while the first is running? Reverted. Overlapping streams are impossible — proven live on-chain.",
+    "caption": "OVERLAPPING STREAMS = IMPOSSIBLE",
+    "sub": "finalize(3) → CycleStillStreaming — proven live",
+    "visual": "p4"
+  },
+  {
+    "id": "y7",
+    "text": "Cancel anytime, and the unspent remainder returns to your wallet instantly. Renew? Same tag, every cycle. No re-onboarding, ever.",
+    "caption": "CANCEL → INSTANT REFUND · SAME TAG TO RENEW",
+    "sub": "No disputes · no re-onboarding",
+    "visual": "p6"
+  },
+  {
+    "id": "y8",
+    "text": "Merchants get paid by the second, and gate access with one single on-chain read.",
+    "caption": "MERCHANTS: PAID BY THE SECOND",
+    "sub": "isActive(plan, customer) — one read",
+    "visual": "s7"
+  },
+  {
+    "id": "y9",
+    "text": "Drip. Recurring payments, rebuilt on the XRP rails. Live on Coston2 testnet — drip fxrp dot vercel dot app.",
+    "caption": "DRIP — LIVE ON COSTON2",
+    "sub": "dripfxrp.vercel.app",
+    "visual": "s8"
+  }
+]

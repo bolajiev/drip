@@ -2,8 +2,8 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { readContract } from "wagmi/actions";
 import { useConfig } from "wagmi";
 
-import { lockupAbi, subscriptionsAbi, fxrpAbi } from "./abis";
-import { DRIP_LOCKUP, DRIP_SUBSCRIPTIONS, FXRP, coston2 } from "./config";
+import { lockupAbi, subscriptionsAbi, fxrpAbi, assetManagerAbi } from "./abis";
+import { DRIP_LOCKUP, DRIP_SUBSCRIPTIONS, FXRP, ASSET_MANAGER, coston2 } from "./config";
 
 export function usePlans() {
   const config = useConfig();
@@ -44,7 +44,7 @@ export function useSubscriptions() {
       queryKey: ["subscription", id],
       queryFn: () =>
         readContract(config, { ...base, functionName: "subscriptions", args: [BigInt(id)] }) as Promise<
-          readonly [bigint, string, bigint, bigint, bigint, boolean]
+          readonly [bigint, string, bigint, bigint, bigint, boolean, string]
         >,
       refetchInterval: 5000,
     })),
@@ -111,9 +111,33 @@ export function useFxrpBalance(address: string | undefined) {
   });
 }
 
-/** Total withdrawable across a set of streams (for the merchant dashboard). */
-export function useTotalWithdrawable(streamIds: bigint[]) {
+/** Live XRPL payment quote for a direct mint: net amount + mint fee + executor fee, in UBA. */
+export function useDirectMintQuote(priceUba: bigint | undefined) {
   const config = useConfig();
+  const base = { chainId: coston2.id, address: ASSET_MANAGER, abi: assetManagerAbi } as const;
+  const fees = useQuery({
+    queryKey: ["directMintFees"],
+    queryFn: async () => {
+      const [executorFeeUBA, feeBIPS, minimumFeeUBA] = await Promise.all([
+        readContract(config, { ...base, functionName: "getDirectMintingExecutorFeeUBA" }) as Promise<bigint>,
+        readContract(config, { ...base, functionName: "getDirectMintingFeeBIPS" }) as Promise<bigint>,
+        readContract(config, { ...base, functionName: "getDirectMintingMinimumFeeUBA" }) as Promise<bigint>,
+      ]);
+      return { executorFeeUBA, feeBIPS, minimumFeeUBA };
+    },
+    refetchInterval: 60000,
+  });
+  if (fees.data && priceUba) {
+    const { executorFeeUBA, feeBIPS, minimumFeeUBA } = fees.data;
+    const proportional = (priceUba * feeBIPS) / 10000n;
+    const mintingFeeUBA = proportional > minimumFeeUBA ? proportional : minimumFeeUBA;
+    return { loading: fees.isPending, totalUba: priceUba + mintingFeeUBA + executorFeeUBA };
+  }
+  return { loading: fees.isPending, totalUba: undefined };
+}
+
+/** Total withdrawable across a set of streams (for the merchant dashboard). */
+export function useTotalWithdrawable(streamIds: bigint[]) {  const config = useConfig();
   const base = { chainId: coston2.id, address: DRIP_LOCKUP, abi: lockupAbi } as const;
   const qs = useQueries({
     queries: streamIds.map((streamId) => ({

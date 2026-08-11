@@ -10,22 +10,25 @@ import { IFlareContractRegistry } from "./interfaces/IFlareContractRegistry.sol"
 import { IMintingTagManager } from "./interfaces/IMintingTagManager.sol";
 import { Errors } from "./libraries/Errors.sol";
 import { Lockup } from "./types/Lockup.sol";
+import { DripEscrow } from "./DripEscrow.sol";
 
 /// @title DripSubscriptions
 /// @notice Drip's recurring-subscription wrapper. One XRPL payment (via FAssets direct minting) funds one
-///         billing cycle: the minted FXRP lands in this contract, {finalize} deposits it into a cancelable
-///         linear stream in {DripLockup}, and the merchant draws down the vested amount over the cycle.
+///         billing cycle: the minted FXRP lands in the subscription's escrow, {finalize} deposits it into
+///         a cancelable linear stream in {DripLockup}, and the merchant draws down the vested amount over
+///         the cycle.
 /// @dev Renewal model: every subscription owns a reserved XRPL destination tag (via {IMintingTagManager}),
-///      permanently bound to this contract as the minting recipient. The customer pays with the same
+///      bound to the subscription's {DripEscrow} as the minting recipient. The customer pays with the same
 ///      destination tag each billing cycle; {finalize} credits the subscription and opens the next stream.
 ///      The customer is the stream's sender, so they can cancel directly on {DripLockup} and the unstreamed
 ///      remainder is refunded to them by the lockup contract, with no interaction needed here.
 ///
-///      The reserved tag is an ERC-721 minted to this contract, hence {IERC721Receiver} support.
+///      Payments are segregated per subscription: the escrow's balance is the only balance {finalize} can
+///      credit, so concurrent payments for different subscriptions can never be mixed up. A payment that
+///      arrives while the current cycle is still streaming stays in the escrow as next-cycle credit (visible
+///      on-chain, refundable via {refundPending}); {finalize} refuses to open overlapping streams.
 ///
-///      Known limitation (out of scope for the hackathon): payments are attributed to a subscription by
-///      contract-level balance accounting ({pendingFxrp}), so concurrent pending payments for different
-///      subscriptions must be finalized sequentially.
+///      The reserved tag is an ERC-721 minted to this contract, hence {IERC721Receiver} support.
 contract DripSubscriptions is IERC721Receiver {
     /*//////////////////////////////////////////////////////////////////////////
                                   STATE VARIABLES
@@ -51,6 +54,12 @@ contract DripSubscriptions is IERC721Receiver {
 
     /// @dev Subscriptions mapped by unsigned integers.
     mapping(uint256 subscriptionId => Subscription subscription) public subscriptions;
+
+    /// @dev The subscription a customer holds on a plan (0 if none), for per-plan access control.
+    mapping(uint256 planId => mapping(address customer => uint256 subscriptionId)) public planSubscriptionOf;
+
+    /// @dev The subscriptions a customer has ever held, for the global {isActive} read.
+    mapping(address customer => uint256[] subscriptionIds) internal subscriptionIdsOf;
 
     /*//////////////////////////////////////////////////////////////////////////
                                       STRUCTS
@@ -79,6 +88,7 @@ contract DripSubscriptions is IERC721Receiver {
     /// @param streamId The stream of the current billing cycle (zero until the first payment is finalized).
     /// @param cycle The number of billing cycles funded so far.
     /// @param active Whether the subscription is active. Set to false after cancellation.
+    /// @param escrow The subscription's {DripEscrow}, bound as the minting recipient of `tag`.
     struct Subscription {
         uint256 planId;
         address customer;
@@ -86,6 +96,7 @@ contract DripSubscriptions is IERC721Receiver {
         uint256 streamId;
         uint256 cycle;
         bool active;
+        address escrow;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -105,9 +116,19 @@ contract DripSubscriptions is IERC721Receiver {
     /// @notice Emitted when a merchant deactivates a plan.
     event PlanDeactivated(uint256 indexed planId);
 
+    /// @notice Emitted when a merchant reactivates a plan.
+    event PlanReactivated(uint256 indexed planId);
+
+    /// @notice Emitted when a merchant updates a plan's name, description, or price.
+    event PlanUpdated(uint256 indexed planId, uint128 pricePerCycle, string name, string description);
+
     /// @notice Emitted when a customer subscribes. `tag` is the XRPL destination tag to pay into.
     event SubscriptionCreated(
-        uint256 indexed subscriptionId, address indexed customer, uint256 indexed planId, uint256 tag
+        uint256 indexed subscriptionId,
+        address indexed customer,
+        uint256 indexed planId,
+        uint256 tag,
+        address escrow
     );
 
     /// @notice Emitted when a payment is finalized into a stream for a billing cycle.
@@ -117,6 +138,9 @@ contract DripSubscriptions is IERC721Receiver {
 
     /// @notice Emitted when a subscription is deactivated after its stream was canceled.
     event SubscriptionDeactivated(uint256 indexed subscriptionId);
+
+    /// @notice Emitted when un-credited escrow funds are refunded to the customer.
+    event PendingRefunded(uint256 indexed subscriptionId, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -184,6 +208,34 @@ contract DripSubscriptions is IERC721Receiver {
         emit PlanCreated(planId, msg.sender, pricePerCycle, cycleDuration, name, description);
     }
 
+    /// @notice Updates a plan's name, description, and price. The cycle duration stays locked (changing it
+    ///         mid-flight would break active streams).
+    /// @param planId The id of the plan to update.
+    /// @param name The plan's new display name. Required.
+    /// @param description The plan's new description. Optional.
+    /// @param pricePerCycle The plan's new price, in UBA.
+    function updatePlan(uint256 planId, string calldata name, string calldata description, uint128 pricePerCycle)
+        external
+    {
+        // Check: the caller is the plan's merchant.
+        if (msg.sender != plans[planId].merchant) {
+            revert Errors.DripSubscriptions_UnauthorizedPlanOwner(planId, msg.sender);
+        }
+
+        // Check: the new values are valid.
+        if (bytes(name).length == 0 || pricePerCycle == 0) {
+            revert Errors.DripSubscriptions_InvalidPlan();
+        }
+
+        // Effect: store the updated plan.
+        plans[planId].name = name;
+        plans[planId].description = description;
+        plans[planId].pricePerCycle = pricePerCycle;
+
+        // Log the update.
+        emit PlanUpdated(planId, pricePerCycle, name, description);
+    }
+
     /// @notice Deactivates a plan so new customers cannot subscribe. Existing subscriptions are unaffected.
     /// @param planId The id of the plan to deactivate.
     function deactivatePlan(uint256 planId) external {
@@ -199,7 +251,24 @@ contract DripSubscriptions is IERC721Receiver {
         emit PlanDeactivated(planId);
     }
 
-    /// @notice Creates a subscription for a plan and reserves a reusable XRPL destination tag for it.
+    /// @notice Reactivates a deactivated plan so new customers can subscribe again.
+    /// @param planId The id of the plan to reactivate.
+    function reactivatePlan(uint256 planId) external {
+        // Check: the caller is the plan's merchant.
+        if (msg.sender != plans[planId].merchant) {
+            revert Errors.DripSubscriptions_UnauthorizedPlanOwner(planId, msg.sender);
+        }
+
+        // Effect: reactivate the plan.
+        plans[planId].active = true;
+
+        // Log the reactivation.
+        emit PlanReactivated(planId);
+    }
+
+    /// @notice Creates a subscription for a plan: reserves a reusable XRPL destination tag, deploys a
+    ///         per-subscription {DripEscrow}, and binds the tag's minting recipient to it so payments
+    ///         land segregated per subscription.
     /// @dev The reservation fee is paid by this contract in C2FLR, so the contract must be funded with
     ///      native tokens at deployment.
     /// @param planId The id of the plan to subscribe to.
@@ -211,10 +280,20 @@ contract DripSubscriptions is IERC721Receiver {
             revert Errors.DripSubscriptions_PlanNotActive(planId);
         }
 
-        // Interaction: reserve a minting tag and bind this contract as its minting recipient, so direct
-        // mints using this destination tag land here.
+        // Check: the customer is not already subscribed to this plan.
+        if (planSubscriptionOf[planId][msg.sender] != 0) {
+            revert Errors.DripSubscriptions_AlreadySubscribed(planId, msg.sender);
+        }
+
+        // Interaction: reserve a minting tag; the tag NFT is minted to this contract.
         tag = mintingTagManager.reserve{ value: mintingTagManager.reservationFee() }();
-        mintingTagManager.setMintingRecipient(tag, address(this));
+
+        // Effect: deploy the subscription's escrow — its own address receives every future direct mint
+        // that pays into this tag, so payments can never mix across subscriptions.
+        DripEscrow escrow = new DripEscrow(fxrp, address(this), msg.sender);
+
+        // Interaction: bind the tag's minting recipient to the escrow (the tag NFT stays with us).
+        mintingTagManager.setMintingRecipient(tag, address(escrow));
 
         // Load the subscription ID in a variable.
         subscriptionId = nextSubscriptionId;
@@ -226,8 +305,11 @@ contract DripSubscriptions is IERC721Receiver {
             tag: tag,
             streamId: 0,
             cycle: 0,
-            active: true
+            active: true,
+            escrow: address(escrow)
         });
+        planSubscriptionOf[planId][msg.sender] = subscriptionId;
+        subscriptionIdsOf[msg.sender].push(subscriptionId);
 
         unchecked {
             // Effect: bump the next subscription ID.
@@ -235,14 +317,16 @@ contract DripSubscriptions is IERC721Receiver {
         }
 
         // Log the creation of the subscription.
-        emit SubscriptionCreated(subscriptionId, msg.sender, planId, tag);
+        emit SubscriptionCreated(subscriptionId, msg.sender, planId, tag, address(escrow));
     }
 
     /// @notice Credits a received payment to a subscription and opens the stream for its next billing cycle.
-    /// @dev Callable by anyone once the direct mint has landed: the entire pending balance ({pendingFxrp})
-    ///      becomes the stream's deposit. The stream's sender is the customer, so they can cancel it
-    ///      directly on {DripLockup} and be refunded the unstreamed remainder. Renewal is the same call
-    ///      after the customer pays again with the subscription's tag.
+    /// @dev Callable by anyone once a direct mint has landed in the subscription's escrow: the entire
+    ///      escrow balance becomes the stream's deposit. The stream's sender is the customer, so they can
+    ///      cancel it directly on {DripLockup} and be refunded the unstreamed remainder. Renewal is the
+    ///      same call after the customer pays again with the subscription's tag. A payment that arrives
+    ///      while the current cycle is still streaming is not credited yet — it stays in the escrow as
+    ///      next-cycle credit ({refundPending} returns it to the customer at any time).
     /// @param subscriptionId The id of the subscription to finalize.
     function finalize(uint256 subscriptionId) external {
         // Check: the subscription is active.
@@ -251,12 +335,21 @@ contract DripSubscriptions is IERC721Receiver {
             revert Errors.DripSubscriptions_SubscriptionNotActive(subscriptionId);
         }
 
-        // Check: there is a payment waiting to be credited. FXRP can only leave this contract through
-        // {finalize}, so the contract's balance is exactly the uncredited amount.
-        uint256 amount = pendingFxrp();
+        // Check: the current cycle is not still streaming (no overlapping streams — an early renewal
+        // payment waits in the escrow until the current cycle ends).
+        if (_isStreaming(subscription)) {
+            revert Errors.DripSubscriptions_CycleStillStreaming(subscriptionId);
+        }
+
+        // Check: there is a payment waiting to be credited. The escrow's balance is exactly the
+        // uncredited amount for this subscription.
+        uint256 amount = DripEscrow(subscription.escrow).balance();
         if (amount == 0) {
             revert Errors.DripSubscriptions_NoPendingPayment();
         }
+
+        // Interaction: pull the payment out of the escrow into this contract.
+        DripEscrow(subscription.escrow).pull();
 
         // Interactions: deposit the payment into a cancelable linear stream for this billing cycle.
         uint256 streamId = lockup.createStream({
@@ -270,10 +363,36 @@ contract DripSubscriptions is IERC721Receiver {
         // Effect: record the new stream.
         subscription.streamId = streamId;
         subscription.cycle += 1;
-        lastStreamOf[subscription.customer] = streamId;
 
         // Log the finalized payment.
         emit SubscriptionFinalized(subscriptionId, streamId, subscription.cycle, uint128(amount));
+    }
+
+    /// @notice Refunds the un-credited escrow balance (next-cycle prepayment, overpayment, or a payment
+    ///         that arrived after cancellation) to the customer. Callable by anyone — the funds always
+    ///         go to the customer, never the caller.
+    /// @dev Reverts while the current cycle is streaming: once committed to a stream, funds are no
+    ///      longer refundable here (the lockup's {DripLockup.cancel} handles mid-cycle refunds).
+    /// @param subscriptionId The id of the subscription whose escrow holds the funds.
+    function refundPending(uint256 subscriptionId) external {
+        Subscription storage subscription = subscriptions[subscriptionId];
+
+        // Check: the current cycle is not still streaming.
+        if (_isStreaming(subscription)) {
+            revert Errors.DripSubscriptions_CycleStillStreaming(subscriptionId);
+        }
+
+        // Check: there is something to refund.
+        uint256 amount = DripEscrow(subscription.escrow).balance();
+        if (amount == 0) {
+            revert Errors.DripSubscriptions_NoPendingPayment();
+        }
+
+        // Interaction: send the escrow balance back to the customer.
+        DripEscrow(subscription.escrow).refund();
+
+        // Log the refund.
+        emit PendingRefunded(subscriptionId, amount);
     }
 
     /// @notice Marks a subscription as inactive once its current stream has been canceled.
@@ -305,25 +424,48 @@ contract DripSubscriptions is IERC721Receiver {
                           USER-FACING READ-ONLY FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev The most recently finalized stream per customer, used by {isActive}.
-    mapping(address customer => uint256 streamId) public lastStreamOf;
-
-    /// @notice Returns the FXRP balance that has arrived (via direct mints) but has not yet been
-    ///         credited to a stream by {finalize}. FXRP can only leave this contract through {finalize},
-    ///         so this is simply the contract's FXRP balance.
-    function pendingFxrp() public view returns (uint256) {
-        return fxrp.balanceOf(address(this));
+    /// @notice Returns the FXRP balance that has arrived in a subscription's escrow (via direct mints)
+    ///         but has not yet been credited to a stream by {finalize}.
+    /// @param subscriptionId The id of the subscription.
+    function pendingFxrp(uint256 subscriptionId) public view returns (uint256) {
+        return DripEscrow(subscriptions[subscriptionId].escrow).balance();
     }
 
-    /// @notice Returns whether a customer is currently paid up: their most recently finalized
-    ///         stream is still streaming.
+    /// @notice Returns whether a customer is currently paid up on any of their subscriptions.
     /// @dev This is the building block a merchant wires into their own access control ("is this
-    ///      address currently subscribed?"). It gates nothing itself — it only reports status.
+    ///      address currently a customer of mine?"). It gates nothing itself — it only reports status.
     /// @param customer The customer address.
-    /// @return Whether the customer's latest cycle is live right now.
+    /// @return Whether any of the customer's subscriptions has a live stream right now.
     function isActive(address customer) external view returns (bool) {
-        uint256 streamId = lastStreamOf[customer];
-        return streamId != 0 && lockup.statusOf(streamId) == Lockup.Status.STREAMING;
+        uint256[] storage ids = subscriptionIdsOf[customer];
+        for (uint256 i = 0; i < ids.length; i++) {
+            Subscription storage subscription = subscriptions[ids[i]];
+            if (_isStreaming(subscription)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// @notice Returns whether a customer is currently paid up on a specific plan.
+    /// @dev The precise read a merchant gates one product on: true while the customer's subscription
+    ///      to `planId` has a live stream, false before the first payment and from the moment their
+    ///      current cycle stops streaming.
+    /// @param planId The plan id.
+    /// @param customer The customer address.
+    /// @return Whether the customer's subscription to `planId` is live right now.
+    function isActive(uint256 planId, address customer) external view returns (bool) {
+        uint256 subscriptionId = planSubscriptionOf[planId][customer];
+        if (subscriptionId == 0) {
+            return false;
+        }
+        return _isStreaming(subscriptions[subscriptionId]);
+    }
+
+    /// @dev Whether a subscription currently has a live stream (false before its first finalize and
+    ///      from the moment its current cycle stops streaming).
+    function _isStreaming(Subscription storage subscription) internal view returns (bool) {
+        return subscription.streamId != 0 && lockup.statusOf(subscription.streamId) == Lockup.Status.STREAMING;
     }
 
     /*//////////////////////////////////////////////////////////////////////////

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-import { usePlans, useSubscriptions, useStream } from "../lib/hooks";
+import { usePlans, useSubscriptions, useStream, useFxrpBalance } from "../lib/hooks";
 import { subscriptionsAbi, lockupAbi } from "../lib/abis";
 import { DRIP_SUBSCRIPTIONS, DRIP_LOCKUP, STATUS_LABEL } from "../lib/config";
 import { fmtFxrp, fmtClock, shortAddr } from "../lib/format";
@@ -14,6 +14,7 @@ function SubCard({
   streamId,
   cycle,
   active,
+  escrow,
   planPrice,
 }: {
   id: bigint;
@@ -22,10 +23,13 @@ function SubCard({
   streamId: bigint;
   cycle: bigint;
   active: boolean;
+  escrow: string;
   planPrice?: bigint;
 }) {
   const stream = useStream(streamId);
   const st = stream.data;
+  const escrowBal = useFxrpBalance(escrow as `0x${string}`);
+  const pendingPayment = escrowBal.data !== undefined && escrowBal.data > 0n && streamId === 0n;
 
   return (
     <section className="border border-ink">
@@ -42,6 +46,33 @@ function SubCard({
         {streamId === 0n && (
           <div>
             <p className="font-mono text-xs text-ink-soft">NO ACTIVE CYCLE.</p>
+            {pendingPayment && (
+              <div className="mt-3 border border-rule bg-paper-deep p-3">
+                <p className="font-mono text-[11px] text-ink-soft">
+                  <b className="text-ink">{fmtFxrp(escrowBal.data)} FXRP</b> IS SITTING IN YOUR
+                  ESCROW — next cycle&apos;s payment, waiting for the current one to finish.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <TxButton
+                    abi={subscriptionsAbi}
+                    address={DRIP_SUBSCRIPTIONS}
+                    functionName="finalize"
+                    args={[id]}
+                    disabled={streamId !== 0n}
+                  >
+                    FINALIZE → OPEN STREAM
+                  </TxButton>
+                  <TxButton
+                    abi={subscriptionsAbi}
+                    address={DRIP_SUBSCRIPTIONS}
+                    functionName="refundPending"
+                    args={[id]}
+                  >
+                    REFUND IT BACK
+                  </TxButton>
+                </div>
+              </div>
+            )}
             <Link
               to={`/s/${planId.toString()}`}
               className="mt-3 inline-block border border-ink bg-acid px-4 py-2 font-mono text-xs font-semibold tracking-tight text-ink transition-colors hover:bg-ink hover:text-paper"
@@ -86,6 +117,24 @@ function SubCard({
                 </TxButton>
               )}
             </div>
+            {escrowBal.data !== undefined && escrowBal.data > 0n && (
+              <div className="border border-rule bg-paper-deep p-3">
+                <p className="font-mono text-[11px] text-ink-soft">
+                  NEXT CYCLE PAID — <b className="text-ink">{fmtFxrp(escrowBal.data)} FXRP</b> waits
+                  in your escrow until this cycle ends (early payments can&apos;t double-stream).
+                </p>
+                <div className="mt-2">
+                  <TxButton
+                    abi={subscriptionsAbi}
+                    address={DRIP_SUBSCRIPTIONS}
+                    functionName="refundPending"
+                    args={[id]}
+                  >
+                    REFUND IT BACK
+                  </TxButton>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -114,7 +163,7 @@ export function CustomerView({ me }: { me: `0x${string}` }) {
   return (
     <div className="space-y-8">
       {mySubs.map((s) => {
-        const [planId, , tag, streamId, cycle, active] = s.data!;
+        const [planId, , tag, streamId, cycle, active, escrow] = s.data!;
         const plan = plans.find((p) => p.id === Number(planId));
         return (
           <SubCard
@@ -125,6 +174,7 @@ export function CustomerView({ me }: { me: `0x${string}` }) {
             streamId={streamId}
             cycle={cycle}
             active={active}
+            escrow={escrow}
             planPrice={plan?.data?.[1]}
           />
         );

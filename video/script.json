@@ -1,0 +1,50 @@
+[
+  {
+    "id": "s1",
+    "text": "Subscriptions are broken. Cards auto-charge forever. Refunds are a fight.",
+    "caption": "SUBSCRIPTIONS ARE BROKEN",
+    "sub": "Auto-charges · no refunds · no control"
+  },
+  {
+    "id": "s2",
+    "text": "Drip rebuilds recurring payments on the XRP rails.",
+    "caption": "REBUILT ON THE XRP RAILS",
+    "sub": "Pay in XRP. Flare does the minting."
+  },
+  {
+    "id": "s3",
+    "text": "One XRP payment with your tag. Flare mints FXRP into your escrow in two minutes.",
+    "caption": "PAY XRP + TAG → FXRP IN ESCROW",
+    "sub": "Executor mints in ~2 minutes"
+  },
+  {
+    "id": "s4",
+    "text": "Your stream opens automatically, paying the merchant every second.",
+    "caption": "STREAM OPENS AUTOMATICALLY",
+    "sub": "5 FXRP streaming · every second counts"
+  },
+  {
+    "id": "s5",
+    "text": "Cancel anytime — the remainder returns instantly.",
+    "caption": "CANCEL ANYTIME → INSTANT REFUND",
+    "sub": "Unstreamed FXRP flows straight back"
+  },
+  {
+    "id": "s6",
+    "text": "Renew with the same tag. No re-onboarding. Ever.",
+    "caption": "SAME TAG · EVERY RENEWAL",
+    "sub": "One payment per cycle"
+  },
+  {
+    "id": "s7",
+    "text": "Merchants are paid by the second, and gate access with one read.",
+    "caption": "MERCHANTS: PAID BY THE SECOND",
+    "sub": "isActive(plan, customer) — one read"
+  },
+  {
+    "id": "s8",
+    "text": "Drip. Live on Coston2 testnet. drip fxrp dot vercel dot app.",
+    "caption": "DRIP — LIVE ON COSTON2",
+    "sub": "dripfxrp.vercel.app"
+  }
+]
