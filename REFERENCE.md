@@ -39,22 +39,6 @@ contract, especially anything marked "confirm" below.
   of the direct-minting flow) — search Flare Foundation's GitHub org for
   the current repo location before writing integration code from scratch.
 
-## Sablier (fork source)
-
-- Contracts repo: https://github.com/sablier-labs/lockup
-- Audits: https://github.com/sablier-labs/audits (Cantina + independent
-  auditors)
-- Docs: https://docs.sablier.com
-- Architecture: singleton — all streams live in one `SablierLockup`
-  contract, not one contract deployed per stream. Follow this pattern
-  rather than deploying per-subscription contracts.
-- License: historically Business Source License 1.1 on Sablier V2 Core
-  (restricts *commercial production* use for ~4 years post-launch, then
-  converts to GPL). Confirmed non-blocking for this build — testnet,
-  non-commercial, hackathon submission — but check the current `LICENSE`
-  file in the repo before assuming the terms are unchanged.
-- Foundry install: `forge install sablier-labs/lockup`
-
 ## Drip deployment (Coston2, Aug 1 2026)
 
 **LIVE deployment (v3, Aug 9 2026 — per-subscription escrow + no-overlap guard):**

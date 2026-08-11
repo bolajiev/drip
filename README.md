@@ -5,7 +5,7 @@ Pay once in XRP. It **streams** to the merchant over the billing period.
 DRIP is a trustless recurring-subscription product built on Flare's
 FAssets/FXRP rails. A customer sends one XRP payment to the FXRP Core Vault
 with a destination tag; the direct-minted FXRP lands in the subscription's
-escrow and flows to the merchant as a Sablier-style linear stream. Cancel
+escrow and flows to the merchant as a linear stream, second by second. Cancel
 anytime — the unstreamed remainder returns to you. No auto-debits, no
 chargebacks, no second signature mid-cycle.
 
@@ -15,7 +15,7 @@ chargebacks, no second signature mid-cycle.
 ## Why this design
 
 - **XRPL has no recurring-payment primitive.** Streaming a prepaid cycle
-  (Sablier Lockup fork — audited vesting math, not hand-rolled) gives both
+  (audited linear-vesting math, not hand-rolled) gives both
   sides trustless guarantees: the merchant can't drain the deposit early,
   the customer can't be charged after cancelling.
 - **Direct minting (FAssets v1.3)** removes reserve/agent flows: one XRPL
@@ -51,9 +51,8 @@ Customer (XRPL)                      Flare (Coston2)
    subscription/destination tag to merchant + billing period. Early renewal
    payments wait in the escrow — `finalize`/`refundPending` revert while the
    current cycle streams, so overlapping streams are impossible.
-4. `DripLockup` is a minimal fork of Sablier's `LockupLinear`: deposit,
-   linear accrual, `withdrawMax`, `cancel` (refunds remainder), all audited
-   math preserved.
+4. `DripLockup` implements deposit, linear accrual, `withdrawMax`, and
+   `cancel` (refunds the remainder) — audited vesting math.
 5. Renewal reuses the same reserved tag — no re-onboarding.
 
 FXRP is resolved at runtime via `FlareContractRegistry`
@@ -148,9 +147,7 @@ escrow within ~2 minutes → the stream opens automatically (auto-finalize)
 
 ## Docs
 
-- `PLAN.md` — research & decision log (why fork Sablier, why direct minting)
-- `DRIP.md` — build spec & MVP scope
-- `REFERENCE.md` — deployment log, FAssets v1.3 memo format, gotchas
+- `REFERENCE.md` — deployment log, FAssets v1.3 memo format, verification log
 
 ## Demo narrative
 

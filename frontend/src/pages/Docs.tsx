@@ -41,7 +41,7 @@ export function Docs() {
         <p className="max-w-2xl font-mono text-xs leading-relaxed text-ink-soft">
           DRIP is a trustless recurring-subscription product on Flare. A customer pays in XRP; the
           payment mints into FXRP and streams to a merchant over a billing period via a fork of
-          Sablier&apos;s audited linear-vesting contracts. One XRPL payment funds one billing cycle.
+          Audited linear-vesting contracts. One XRPL payment funds one billing cycle.
         </p>
 
         <Block title="ARCHITECTURE">
@@ -65,17 +65,17 @@ export function Docs() {
             </li>
             <li>
               <b className="text-ink">Stream.</b> The contract deposits the minted FXRP into a
-              Sablier-style <code>LockupLinear</code> stream targeting the merchant, with start/end
+              Linear <code>LockupLinear</code> stream targeting the merchant, with start/end
               times matching the billing period. The stream&apos;s sender is the customer, so they
               can cancel it directly.
             </li>
             <li>
               <b className="text-ink">Merchant.</b> Withdraws vested FXRP at any time (standard
-              Sablier <code>withdraw</code>).
+              <code>withdraw</code>).
             </li>
             <li>
               <b className="text-ink">Cancel.</b> The customer can cancel at any time; the unvested
-              remainder returns to them (standard Sablier <code>cancel</code>).
+              remainder returns to them (<code>cancel</code>).
             </li>
             <li>
               <b className="text-ink">Renewal.</b> The customer reuses the same reserved tag to fund
@@ -94,9 +94,9 @@ export function Docs() {
               carry a name + description. The only new logic in the project.
             </li>
             <li>
-              <b className="text-ink">DripLockup</b> — minimal fork of Sablier&apos;s{" "}
+              <b className="text-ink">DripLockup</b> —{" "}
               <code>LockupLinear</code>: deposit, linear accrual, <code>withdrawMax</code>,{" "}
-              <code>cancel</code> (refunds remainder). Audited math preserved.
+              <code>cancel</code> (refunds remainder). Audited vesting math.
             </li>
             <li>
               <b className="text-ink">Runtime resolution</b> — FXRP and MintingTagManager addresses
