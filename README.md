@@ -111,6 +111,8 @@ faucet for test XRP: https://faucet.flare.network/coston2
 ## Contracts — develop & test
 
 ```bash
+forge install foundry-rs/forge-std openzeppelin/openzeppelin-contracts \
+              paulrberg/prb-math sablier-labs/lockup   # install deps once
 forge build
 forge test        # 34 tests, incl. full subscribe→stream→cancel cycle
                   # and the v3 escrow/no-overlap suite
